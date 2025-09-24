@@ -1,0 +1,638 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ArtistMainWindow</class>
+ <widget class="QMainWindow" name="ArtistMainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1200</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>User Dashboard</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="mainLayout">
+    <item>
+     <widget class="QStackedWidget" name="stackedWidget">
+      <property name="currentIndex">
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="homePage">
+       <property name="styleSheet">
+        <string notr="true">background-color: #121212; color: #fff;</string>
+       </property>
+       <widget class="QStackedWidget" name="stackedWidget_2">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>1178</width>
+          <height>778</height>
+         </rect>
+        </property>
+        <widget class="QWidget" name="homePage_2">
+         <property name="styleSheet">
+          <string notr="true">background-color: #121212; color: #fff;</string>
+         </property>
+         <widget class="QLabel" name="homeTitle">
+          <property name="geometry">
+           <rect>
+            <x>511</x>
+            <y>10</y>
+            <width>201</width>
+            <height>61</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">font-size:22px; font-weight:bold;</string>
+          </property>
+          <property name="text">
+           <string>🎵 Home</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+         <widget class="QListWidget" name="homeSongsList">
+          <property name="geometry">
+           <rect>
+            <x>11</x>
+            <y>88</y>
+            <width>1161</width>
+            <height>591</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QFrame" name="bottomNav">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>680</y>
+            <width>1156</width>
+            <height>80</height>
+           </rect>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>80</height>
+           </size>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">
+        QFrame { background-color: #1e1e1e; }
+        QPushButton { 
+            background: none; 
+            color: #eee; 
+            font-size: 24px; 
+            border-radius: 10px; 
+            min-width:50px; min-height:50px; max-width:50px; max-height:50px;
+        }
+        QPushButton:checked { background-color: #3a3a3a; }
+        QPushButton:hover { background-color: #2c2c2c; }
+    </string>
+          </property>
+          <widget class="QPushButton" name="homeBtn">
+           <property name="geometry">
+            <rect>
+             <x>440</x>
+             <y>20</y>
+             <width>50</width>
+             <height>50</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>🏠</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="searchNavBtn">
+           <property name="geometry">
+            <rect>
+             <x>500</x>
+             <y>20</y>
+             <width>50</width>
+             <height>50</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>🔍</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="profileBtn">
+           <property name="geometry">
+            <rect>
+             <x>620</x>
+             <y>20</y>
+             <width>50</width>
+             <height>50</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>👤</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="logoutBtn">
+           <property name="geometry">
+            <rect>
+             <x>1100</x>
+             <y>20</y>
+             <width>50</width>
+             <height>50</height>
+            </rect>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background:red; color:white; font-weight:bold; border-radius:10px; min-width:50px; min-height:50px; max-width:50px; max-height:50px;</string>
+           </property>
+           <property name="text">
+            <string>⏻</string>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="libraryBtn">
+           <property name="geometry">
+            <rect>
+             <x>560</x>
+             <y>20</y>
+             <width>50</width>
+             <height>50</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>🎵</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+          <widget class="QPushButton" name="profileBtn_2">
+           <property name="geometry">
+            <rect>
+             <x>680</x>
+             <y>20</y>
+             <width>50</width>
+             <height>50</height>
+            </rect>
+           </property>
+           <property name="text">
+            <string>📊</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </widget>
+         <widget class="QLabel" name="label">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>10</y>
+            <width>401</width>
+            <height>61</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">font-size:22px; font-weight:bold;</string>
+          </property>
+          <property name="text">
+           <string>Welcome Back, {Username}!</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="label_2">
+          <property name="geometry">
+           <rect>
+            <x>30</x>
+            <y>110</y>
+            <width>231</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">font-size:18px;;</string>
+          </property>
+          <property name="text">
+           <string>Top 5 Artists of the Week!</string>
+          </property>
+         </widget>
+         <widget class="QTableWidget" name="tableWidget">
+          <property name="geometry">
+           <rect>
+            <x>30</x>
+            <y>150</y>
+            <width>561</width>
+            <height>241</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color:#FFFFFF ; color: #000000;              border: 10px; solid #FFFFFF;</string>
+          </property>
+          <property name="rowCount">
+           <number>5</number>
+          </property>
+          <row/>
+          <row/>
+          <row/>
+          <row/>
+          <row/>
+          <column>
+           <property name="text">
+            <string>Artist ID</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Artist Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Weekly Listeners</string>
+           </property>
+          </column>
+         </widget>
+         <widget class="QTableWidget" name="tableWidget_2">
+          <property name="geometry">
+           <rect>
+            <x>600</x>
+            <y>150</y>
+            <width>561</width>
+            <height>509</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color:#FFFFFF ; color: #000000;              border: 10px; solid #FFFFFF;</string>
+          </property>
+          <column>
+           <property name="text">
+            <string>Artist Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Song Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Song Duration</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Play Song</string>
+           </property>
+          </column>
+         </widget>
+         <widget class="QLabel" name="label_3">
+          <property name="geometry">
+           <rect>
+            <x>610</x>
+            <y>110</y>
+            <width>231</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">font-size:18px;;</string>
+          </property>
+          <property name="text">
+           <string>Your Listening History: </string>
+          </property>
+         </widget>
+         <widget class="QStackedWidget" name="stackedWidget_3">
+          <property name="geometry">
+           <rect>
+            <x>30</x>
+            <y>450</y>
+            <width>561</width>
+            <height>211</height>
+           </rect>
+          </property>
+          <widget class="QWidget" name="page">
+           <widget class="QPushButton" name="requestsBtn">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>10</y>
+              <width>191</width>
+              <height>43</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 15px;</string>
+            </property>
+            <property name="text">
+             <string>New Listeners</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+           <widget class="QPushButton" name="requestsBtn_2">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>80</y>
+              <width>191</width>
+              <height>43</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 15px;</string>
+            </property>
+            <property name="text">
+             <string>Revenue</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+           <widget class="QStackedWidget" name="stackedWidget_4">
+            <property name="geometry">
+             <rect>
+              <x>160</x>
+              <y>160</y>
+              <width>561</width>
+              <height>211</height>
+             </rect>
+            </property>
+            <widget class="QWidget" name="page_3">
+             <widget class="QPushButton" name="requestsBtn_4">
+              <property name="geometry">
+               <rect>
+                <x>10</x>
+                <y>70</y>
+                <width>191</width>
+                <height>43</height>
+               </rect>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">font-size: 15px;</string>
+              </property>
+              <property name="text">
+               <string>Daily revenue</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </widget>
+            <widget class="QWidget" name="page_4"/>
+           </widget>
+           <widget class="QPushButton" name="requestsBtn_3">
+            <property name="geometry">
+             <rect>
+              <x>10</x>
+              <y>140</y>
+              <width>191</width>
+              <height>43</height>
+             </rect>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">font-size: 15px;</string>
+            </property>
+            <property name="text">
+             <string>Repeat Listeners</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+           <widget class="QFrame" name="frame">
+            <property name="geometry">
+             <rect>
+              <x>230</x>
+              <y>10</y>
+              <width>311</width>
+              <height>181</height>
+             </rect>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+           </widget>
+          </widget>
+          <widget class="QWidget" name="page_2"/>
+         </widget>
+         <widget class="QLabel" name="label_4">
+          <property name="geometry">
+           <rect>
+            <x>40</x>
+            <y>410</y>
+            <width>231</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">font-size:18px;;</string>
+          </property>
+          <property name="text">
+           <string>Your Daily Analytics: </string>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QWidget" name="libraryPage_2">
+         <property name="styleSheet">
+          <string notr="true">background-color: #121212; color: #fff;</string>
+         </property>
+         <layout class="QVBoxLayout" name="_2">
+          <item>
+           <widget class="QLabel" name="libraryTitle_2">
+            <property name="styleSheet">
+             <string notr="true">font-size:22px; font-weight:bold;</string>
+            </property>
+            <property name="text">
+             <string>📚 Library</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QListWidget" name="libraryList_2"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="searchPage_2">
+         <property name="styleSheet">
+          <string notr="true">background-color: #121212; color: #fff;</string>
+         </property>
+         <layout class="QVBoxLayout" name="_3">
+          <item>
+           <widget class="QLabel" name="searchTitle_2">
+            <property name="styleSheet">
+             <string notr="true">font-size:22px; font-weight:bold;</string>
+            </property>
+            <property name="text">
+             <string>🔍 Search</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="_4">
+            <item>
+             <widget class="QLineEdit" name="searchInput_2">
+              <property name="placeholderText">
+               <string>Search for songs or artists...</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="searchBtn_2">
+              <property name="text">
+               <string>Search</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <widget class="QListWidget" name="searchResults_2"/>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="profilePage_2">
+         <property name="styleSheet">
+          <string notr="true">background-color: #121212; color: #fff;</string>
+         </property>
+         <layout class="QVBoxLayout" name="_5">
+          <item>
+           <widget class="QLabel" name="profileTitle_2">
+            <property name="styleSheet">
+             <string notr="true">font-size:22px; font-weight:bold;</string>
+            </property>
+            <property name="text">
+             <string>👤 Profile</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="themeToggleBtn_2">
+            <property name="text">
+             <string>Switch Light/Dark Theme</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </widget>
+      </widget>
+      <widget class="QWidget" name="libraryPage">
+       <property name="styleSheet">
+        <string notr="true">background-color: #121212; color: #fff;</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QLabel" name="libraryTitle">
+          <property name="styleSheet">
+           <string notr="true">font-size:22px; font-weight:bold;</string>
+          </property>
+          <property name="text">
+           <string>📚 Library</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="libraryList"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="searchPage">
+       <property name="styleSheet">
+        <string notr="true">background-color: #121212; color: #fff;</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QLabel" name="searchTitle">
+          <property name="styleSheet">
+           <string notr="true">font-size:22px; font-weight:bold;</string>
+          </property>
+          <property name="text">
+           <string>🔍 Search</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout">
+          <item>
+           <widget class="QLineEdit" name="searchInput">
+            <property name="placeholderText">
+             <string>Search for songs or artists...</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="searchBtn">
+            <property name="text">
+             <string>Search</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QListWidget" name="searchResults"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="profilePage">
+       <property name="styleSheet">
+        <string notr="true">background-color: #121212; color: #fff;</string>
+       </property>
+       <layout class="QVBoxLayout">
+        <item>
+         <widget class="QLabel" name="profileTitle">
+          <property name="styleSheet">
+           <string notr="true">font-size:22px; font-weight:bold;</string>
+          </property>
+          <property name="text">
+           <string>👤 Profile</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="themeToggleBtn">
+          <property name="text">
+           <string>Switch Light/Dark Theme</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
