@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>768</width>
-    <height>565</height>
+    <height>582</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Login</string>
+   <string>Habibify Music App</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color:#121212;</string>
@@ -97,6 +97,24 @@
       </widget>
      </item>
      <item>
+      <widget class="QLabel" name="invalidInputLabel">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: red;</string>
+       </property>
+       <property name="text">
+        <string>Invalid Username or password! </string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="bottomSpacer">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -117,9 +135,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="loginBtn_2">
+      <widget class="QPushButton" name="signupBtn">
        <property name="text">
-        <string>Signup Here</string>
+        <string>Signup Page</string>
        </property>
       </widget>
      </item>

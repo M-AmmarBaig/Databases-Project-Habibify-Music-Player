@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>LoginWindow</class>
- <widget class="QMainWindow" name="LoginWindow">
+ <class>SignupWindow</class>
+ <widget class="QMainWindow" name="SignupWindow">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>771</width>
-    <height>580</height>
+    <height>593</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Login</string>
+   <string>Habibify Music App</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color:#121212;</string>
@@ -21,9 +21,9 @@
     <property name="geometry">
      <rect>
       <x>210</x>
-      <y>130</y>
+      <y>90</y>
       <width>371</width>
-      <height>341</height>
+      <height>431</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -68,17 +68,17 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="usernameInput_2">
+      <widget class="QLineEdit" name="fullnameInput">
        <property name="text">
         <string/>
        </property>
        <property name="placeholderText">
-        <string>First Name</string>
+        <string>Full Name</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="usernameInput_3">
+      <widget class="QLineEdit" name="emailInput">
        <property name="text">
         <string/>
        </property>
@@ -90,7 +90,7 @@
      <item>
       <widget class="QLineEdit" name="passwordInput">
        <property name="echoMode">
-        <enum>QLineEdit::Password</enum>
+        <enum>QLineEdit::Normal</enum>
        </property>
        <property name="placeholderText">
         <string>Password</string>
@@ -98,15 +98,33 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="passwordInput_2">
+      <widget class="QLineEdit" name="confirmPasswordInput">
        <property name="text">
         <string/>
        </property>
        <property name="echoMode">
-        <enum>QLineEdit::Password</enum>
+        <enum>QLineEdit::Normal</enum>
        </property>
        <property name="placeholderText">
         <string>Confirm Password</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="invalidInputLabel">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">color: red;</string>
+       </property>
+       <property name="text">
+        <string>Passwords do not match!</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
        </property>
       </widget>
      </item>
@@ -124,9 +142,16 @@
       </spacer>
      </item>
      <item>
-      <widget class="QPushButton" name="loginBtn_2">
+      <widget class="QPushButton" name="signupBtn">
        <property name="text">
         <string>Signup</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="returnBtn">
+       <property name="text">
+        <string>Back to Login Page</string>
        </property>
       </widget>
      </item>
@@ -136,7 +161,7 @@
     <property name="geometry">
      <rect>
       <x>300</x>
-      <y>60</y>
+      <y>30</y>
       <width>164</width>
       <height>37</height>
      </rect>

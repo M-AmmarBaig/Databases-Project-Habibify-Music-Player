@@ -1,9 +1,9 @@
 from PyQt5 import QtWidgets, QtCore, uic
 import sys
 
-class UserMainWindow(QtWidgets.QMainWindow):
+class ListenerDashboard(QtWidgets.QMainWindow):
     def __init__(self):
-        super(UserMainWindow, self).__init__()
+        super(ListenerDashboard, self).__init__()
         uic.loadUi("user_main.ui", self)
 
         # Remove maximize/minimize
