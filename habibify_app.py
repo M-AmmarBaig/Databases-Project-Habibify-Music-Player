@@ -1,16 +1,8 @@
 import sys, re
 
 from PyQt5 import QtWidgets, uic
-
-Users = {
-    "Ammar" : ["Muhammad Ammar Baig", "ammarbaig123", "ammar@gmail.com", r"C:\Users\User\OneDrive - Habib University\Habib University\Semester 3\Database Management Systems\DBMS Project - Music App\Profile Pictures\Ammar.jpeg", "Admin"],
-    "Sarosh" : ["Sarosh Mehdi Yusuf", "saroshmehdi123", "sarosh@gmail.com", r"C:\Users\User\OneDrive - Habib University\Habib University\Semester 3\Database Management Systems\DBMS Project - Music App\Profile Pictures\Charlie.jpeg", "Admin"],
-    "Charlie" : ["Sir Christopher Nolan", "christopher123", "christopher@gmail.com", r"C:\Users\User\OneDrive - Habib University\Habib University\Semester 3\Database Management Systems\DBMS Project - Music App\Profile Pictures\Christopher.jpeg", "Listener"],
-    "Ezekiel" : ["Ezekiel Woods", "ezekiel123", "ezekiel@gmail.com", r"C:\Users\User\OneDrive - Habib University\Habib University\Semester 3\Database Management Systems\DBMS Project - Music App\Profile Pictures\Ezekiel.jpeg", "Listener"],
-    "Samantha" : ["Samantha Williams", "samantha123", "samantha@gmail.com", r"C:\Users\User\OneDrive - Habib University\Habib University\Semester 3\Database Management Systems\DBMS Project - Music App\Profile Pictures\Samantha.jpeg", "Artist"],
-    "Shawn" : ["Shawn Mendes", "shawn123", "shawn@gmail.com", r"C:\Users\User\OneDrive - Habib University\Habib University\Semester 3\Database Management Systems\DBMS Project - Music App\Profile Pictures\Shawn.jpeg", "Artist"]
-}
-
+from data import *
+from admin_functions import AdminDashboardHandler
 
 class LoginWindow(QtWidgets.QMainWindow):
     
@@ -52,11 +44,16 @@ class LoginWindow(QtWidgets.QMainWindow):
                 #Open dashboard depending on type of user
                 usertype = data[4]
                 if usertype == "Admin":
-                    self.dashboard = AdminDashboard(username)
+                    self.dashboard = AdminDashboard(username) # Pass username
                 elif usertype == "Artist":
-                    self.dashboard = ArtistDashboard(username)
+                    # self.dashboard = ArtistDashboard(username) # Placeholder
+                    print("Artist Dashboard not implemented yet.")
+                    return
                 else:
-                    self.dashboard = ListenerDashboard(username)
+                    # self.dashboard = ListenerDashboard(username) # Placeholder
+                    print("Listener Dashboard not implemented yet.")
+                    return
+                
                 self.dashboard.show()
 
             else:
@@ -123,7 +120,9 @@ class SignupWindow(QtWidgets.QMainWindow):
         
         
         #Entering valid data into database
-        Users[username] = [fullname, password1, email, "", "Listener"]
+        today = datetime.now().strftime("%Y-%m-%d")
+        Users[username] = [fullname, password1, email, r"Profile Pictures\default.jpg", "Listener", "Free", 0, today]
+        
         QtWidgets.QMessageBox.information(self, "Success", "Signup successful! Returning to login page...")
         self.open_login()
         
@@ -134,12 +133,19 @@ class SignupWindow(QtWidgets.QMainWindow):
         self.view_login = LoginWindow()
         self.view_login.show()
 
+# ===================================================================
+# ADMIN DASHBOARD (MODIFIED)
+# ===================================================================
 class AdminDashboard(QtWidgets.QMainWindow):
     def __init__(self, username):
         super().__init__()
         uic.loadUi(r"App UI\admin_main.ui", self)
+        
+        # Store username and set welcome label
+        self.username = username
+        self.welcomeLabel.setText(f"Welcome back, {self.username}!")
 
-        # Map buttons to pages
+        # --- Sidebar Page Navigation ---
         self.page_map = {
             self.artistrequestsBtn: self.artistRequestsPage,
             self.analyticsBtn: self.AnalyticsPage,
@@ -147,20 +153,29 @@ class AdminDashboard(QtWidgets.QMainWindow):
             self.reportsBtn: self.ReportsPage,
             self.pendingSongsBtn: self.PendingSongsPage
         }
-
-        # Connect buttons to handler
+        
+        # Connect sidebar buttons
         for btn in self.page_map:
             btn.clicked.connect(self.switch_page)
 
-        # Connect other buttons
+        # Connect logout button
         self.logoutBtn.clicked.connect(self.logout)
 
-        # Highlight first button by default
+        # --- Initialize the Logic Handler ---
+        # This one line creates the handler and passes it a reference to this window
+        self.handler = AdminDashboardHandler(self)
+        
+        # --- Delegate Logic to Handler ---
+        # Call the handler's methods to load data and connect signals
+        self.handler.load_all_data()
+        self.handler.connect_signals()
+
+        # --- Set Default View ---
         self.highlight_button(self.artistrequestsBtn)
         self.stackedWidget.setCurrentWidget(self.artistRequestsPage)
 
-
     def switch_page(self):
+        """Switches the stackedWidget page based on the button clicked."""
         sender = self.sender()
         page = self.page_map.get(sender)
         if page:
@@ -168,46 +183,20 @@ class AdminDashboard(QtWidgets.QMainWindow):
             self.highlight_button(sender)
 
     def highlight_button(self, active_btn):
+        """Applies a 'checked' style to the active sidebar button."""
         # Reset all buttons first
         for btn in self.page_map:
-            btn.setStyleSheet(
-                "QPushButton {background: none; color: #eee; font-size:16px; padding:10px; border-radius:5px;} "
-                "QPushButton:hover {background-color:#2c2c2c;}"
-            )
-        # Apply highlight to active
-        active_btn.setStyleSheet(
-            "QPushButton {background-color: #3a7ef0; color: #fff; font-weight:bold; font-size:16px; padding:10px; border-radius:5px;}"
-        )
+            btn.setChecked(False)
+            
+        # Set the active button to checked
+        active_btn.setChecked(True)
 
     def logout(self):
+        """Logs out and returns to the LoginWindow."""
         print("Logging out of admin menu...")
         self.close()
         self.loginwindow = LoginWindow()
         self.loginwindow.show()
-        
-
-    # Placeholder methods for admin actions
-    def delete_reported_song(self):
-        print("Delete reported song clicked")
-        # Logic to delete selected reported song
-
-    def delete_user(self):
-        print("Delete user clicked")
-        # Logic to delete selected user
-
-    def view_song(self):
-        print("View song clicked")
-        # Logic to view selected pending song
-
-    def accept_song(self):
-        print("Accept song clicked")
-        # Logic to accept selected pending song
-
-    def reject_song(self):
-        print("Reject song clicked")
-        # Logic to reject selected pending song
-        
-
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
