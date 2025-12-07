@@ -90,6 +90,15 @@ SubscriptionPlans = {
     "SP002": ["Premium", 15.99, "Monthly", "Ad-free, High quality audio, Offline downloads"],
 }
 
+Genres = {
+    "GN001": ["Hip Hop", "Funky 90s music"],
+    "GN002": ["Pop", "Catchy and mainstream tunes"],
+    "GN003": ["Acoustic", "Soft unplugged melodies and vocals"],
+    "GN004": ["Blues", "Soulful rhythm with emotional depth"],
+    "GN005": ["Electronic", "Synth-driven modern beats and EDM vibes"],
+    "GN006": ["Rock", "Energetic guitars and powerful vocals"]
+}
+
 # Revenue Data (for analytics)
 # Format: date: revenue_amount
 RevenueData = {
@@ -154,6 +163,9 @@ def get_reported_songs():
 def get_subscription_plans():
     """Get all subscription plans"""
     return SubscriptionPlans
+
+def get_all_genres():
+    return Genres
 
 def add_user(username, user_data):
     """Add a new user"""
@@ -227,3 +239,6 @@ def update_subscription_plan(plan_id, plan_data):
         SubscriptionPlans[plan_id] = plan_data
         return True
     return False
+
+def add_genre(genre_id, genre_data):
+    Genres[genre_id] = genre_data;

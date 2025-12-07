@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1223</width>
-    <height>858</height>
+    <height>892</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -262,6 +262,12 @@
           <property name="styleSheet">
            <string notr="true">background-color:#FFFFFF ; color: #000000;</string>
           </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
           <property name="columnCount">
            <number>5</number>
           </property>
@@ -368,6 +374,9 @@ border-color: rgb(255, 255, 255);</string>
            <property name="text">
             <string/>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLabel" name="label_23">
            <property name="geometry">
@@ -397,6 +406,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="EmailLineEdit_2">
            <property name="geometry">
@@ -409,6 +421,9 @@ border-color: rgb(255, 255, 255);</string>
            </property>
            <property name="text">
             <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QLabel" name="label_24">
@@ -458,6 +473,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="SubscriptionLineEdit_2">
            <property name="geometry">
@@ -470,6 +488,9 @@ border-color: rgb(255, 255, 255);</string>
            </property>
            <property name="text">
             <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QLabel" name="label_27">
@@ -579,6 +600,12 @@ border-color: rgb(255, 255, 255);</string>
            <widget class="QTableWidget" name="tableWidget">
             <property name="styleSheet">
              <string notr="true">background-color:#FFFFFF ; color: #000000;</string>
+            </property>
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="sortingEnabled">
+             <bool>true</bool>
             </property>
             <attribute name="horizontalHeaderDefaultSectionSize">
              <number>181</number>
@@ -697,6 +724,9 @@ border-color: rgb(255, 255, 255);</string>
            <property name="text">
             <string/>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLabel" name="label_7">
            <property name="geometry">
@@ -726,6 +756,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="EmailLineEdit">
            <property name="geometry">
@@ -738,6 +771,9 @@ border-color: rgb(255, 255, 255);</string>
            </property>
            <property name="text">
             <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QLabel" name="label_8">
@@ -787,6 +823,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLabel" name="label_10">
            <property name="geometry">
@@ -816,6 +855,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="SubscriptionLineEdit">
            <property name="geometry">
@@ -828,6 +870,9 @@ border-color: rgb(255, 255, 255);</string>
            </property>
            <property name="text">
             <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QLabel" name="label_12">
@@ -885,6 +930,9 @@ border-color: rgb(255, 255, 255);</string>
            </property>
            <property name="text">
             <string/>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
          </widget>
@@ -974,6 +1022,12 @@ border-color: rgb(255, 255, 255);</string>
          <widget class="QTableWidget" name="pendingSongsTable">
           <property name="styleSheet">
            <string notr="true">background-color:#FFFFFF ; color: #000000;</string>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
           </property>
           <property name="columnCount">
            <number>5</number>
@@ -1123,6 +1177,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLabel" name="label_3">
            <property name="geometry">
@@ -1152,6 +1209,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="ArtistName">
            <property name="geometry">
@@ -1161,6 +1221,9 @@ border-color: rgb(255, 255, 255);</string>
              <width>221</width>
              <height>31</height>
             </rect>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QLabel" name="label_4">
@@ -1210,6 +1273,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="genreLineEdit">
            <property name="geometry">
@@ -1219,6 +1285,9 @@ border-color: rgb(255, 255, 255);</string>
              <width>181</width>
              <height>31</height>
             </rect>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QLabel" name="label_11">
@@ -1332,6 +1401,12 @@ border-color: rgb(255, 255, 255);</string>
           <property name="styleSheet">
            <string notr="true">background-color:#FFFFFF ; color: #000000;</string>
           </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
           <property name="columnCount">
            <number>5</number>
           </property>
@@ -1441,6 +1516,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLabel" name="label_14">
            <property name="geometry">
@@ -1470,6 +1548,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="Reports_ArtistName">
            <property name="geometry">
@@ -1479,6 +1560,9 @@ border-color: rgb(255, 255, 255);</string>
              <width>221</width>
              <height>31</height>
             </rect>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QLabel" name="label_15">
@@ -1528,6 +1612,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="Reports_Genre">
            <property name="geometry">
@@ -1537,6 +1624,9 @@ border-color: rgb(255, 255, 255);</string>
              <width>181</width>
              <height>31</height>
             </rect>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
           <widget class="QLabel" name="label_17">
@@ -1649,6 +1739,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="Reports_Dislikes">
            <property name="geometry">
@@ -1659,6 +1752,9 @@ border-color: rgb(255, 255, 255);</string>
              <height>31</height>
             </rect>
            </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
           </widget>
           <widget class="QLineEdit" name="Reports_Dislikes_2">
            <property name="geometry">
@@ -1668,6 +1764,9 @@ border-color: rgb(255, 255, 255);</string>
              <width>181</width>
              <height>31</height>
             </rect>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
          </widget>
@@ -1685,9 +1784,9 @@ border-color: rgb(255, 255, 255);</string>
        <widget class="QLabel" name="manageArtistsTitle">
         <property name="geometry">
          <rect>
-          <x>420</x>
-          <y>10</y>
-          <width>101</width>
+          <x>540</x>
+          <y>60</y>
+          <width>271</width>
           <height>27</height>
          </rect>
         </property>
@@ -1695,7 +1794,7 @@ border-color: rgb(255, 255, 255);</string>
          <string notr="true">font-size:22px; font-weight:bold;</string>
         </property>
         <property name="text">
-         <string>Analytics</string>
+         <string>Analytics Page</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -1707,7 +1806,7 @@ border-color: rgb(255, 255, 255);</string>
           <x>20</x>
           <y>50</y>
           <width>391</width>
-          <height>481</height>
+          <height>471</height>
          </rect>
         </property>
         <property name="minimumSize">
@@ -1730,6 +1829,9 @@ border-color: rgb(255, 255, 255);</string>
          </property>
          <property name="styleSheet">
           <string notr="true">background-color:#FFFFFF ; color: #000000;</string>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
          </property>
          <property name="verticalScrollMode">
           <enum>QAbstractItemView::ScrollPerPixel</enum>
@@ -1769,9 +1871,9 @@ border-color: rgb(255, 255, 255);</string>
         <widget class="QLabel" name="label_26">
          <property name="geometry">
           <rect>
-           <x>20</x>
-           <y>230</y>
-           <width>111</width>
+           <x>160</x>
+           <y>210</y>
+           <width>81</width>
            <height>31</height>
           </rect>
          </property>
@@ -1788,7 +1890,7 @@ border-color: rgb(255, 255, 255);</string>
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>270</y>
+           <y>250</y>
            <width>111</width>
            <height>31</height>
           </rect>
@@ -1812,7 +1914,7 @@ border-color: rgb(255, 255, 255);</string>
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>310</y>
+           <y>290</y>
            <width>111</width>
            <height>31</height>
           </rect>
@@ -1835,9 +1937,9 @@ border-color: rgb(255, 255, 255);</string>
         <widget class="QLabel" name="label_30">
          <property name="geometry">
           <rect>
-           <x>10</x>
-           <y>350</y>
-           <width>111</width>
+           <x>20</x>
+           <y>330</y>
+           <width>101</width>
            <height>31</height>
           </rect>
          </property>
@@ -1860,7 +1962,7 @@ border-color: rgb(255, 255, 255);</string>
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>390</y>
+           <y>370</y>
            <width>111</width>
            <height>31</height>
           </rect>
@@ -1884,7 +1986,7 @@ border-color: rgb(255, 255, 255);</string>
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>270</y>
+           <y>250</y>
            <width>241</width>
            <height>31</height>
           </rect>
@@ -1894,12 +1996,15 @@ border-color: rgb(255, 255, 255);</string>
            <pointsize>10</pointsize>
           </font>
          </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
         </widget>
         <widget class="QLineEdit" name="PlanPrice">
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>310</y>
+           <y>290</y>
            <width>241</width>
            <height>31</height>
           </rect>
@@ -1914,7 +2019,7 @@ border-color: rgb(255, 255, 255);</string>
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>390</y>
+           <y>370</y>
            <width>241</width>
            <height>31</height>
           </rect>
@@ -1929,7 +2034,7 @@ border-color: rgb(255, 255, 255);</string>
          <property name="geometry">
           <rect>
            <x>130</x>
-           <y>350</y>
+           <y>330</y>
            <width>241</width>
            <height>31</height>
           </rect>
@@ -1944,7 +2049,7 @@ border-color: rgb(255, 255, 255);</string>
          <property name="geometry">
           <rect>
            <x>220</x>
-           <y>440</y>
+           <y>420</y>
            <width>151</width>
            <height>31</height>
           </rect>
@@ -1969,7 +2074,7 @@ background-color: rgb(78, 230, 13);</string>
          <property name="geometry">
           <rect>
            <x>60</x>
-           <y>440</y>
+           <y>420</y>
            <width>151</width>
            <height>31</height>
           </rect>
@@ -1995,9 +2100,9 @@ background-color: rgb(78, 230, 13);</string>
         <property name="geometry">
          <rect>
           <x>430</x>
-          <y>50</y>
+          <y>130</y>
           <width>471</width>
-          <height>251</height>
+          <height>231</height>
          </rect>
         </property>
         <property name="title">
@@ -2009,7 +2114,7 @@ background-color: rgb(78, 230, 13);</string>
            <x>20</x>
            <y>30</y>
            <width>181</width>
-           <height>201</height>
+           <height>181</height>
           </rect>
          </property>
          <property name="title">
@@ -2127,7 +2232,7 @@ background-color: rgb(78, 230, 13);</string>
          <property name="geometry">
           <rect>
            <x>300</x>
-           <y>190</y>
+           <y>170</y>
            <width>151</width>
            <height>41</height>
           </rect>
@@ -2153,9 +2258,9 @@ background-color: rgb(78, 230, 13);</string>
         <property name="geometry">
          <rect>
           <x>430</x>
-          <y>320</y>
+          <y>380</y>
           <width>471</width>
-          <height>251</height>
+          <height>231</height>
          </rect>
         </property>
         <property name="title">
@@ -2167,7 +2272,7 @@ background-color: rgb(78, 230, 13);</string>
            <x>20</x>
            <y>30</y>
            <width>181</width>
-           <height>201</height>
+           <height>181</height>
           </rect>
          </property>
          <property name="title">
@@ -2285,7 +2390,7 @@ background-color: rgb(78, 230, 13);</string>
          <property name="geometry">
           <rect>
            <x>300</x>
-           <y>190</y>
+           <y>170</y>
            <width>151</width>
            <height>41</height>
           </rect>
@@ -2301,6 +2406,344 @@ background-color: rgb(78, 230, 13);</string>
          </property>
          <property name="text">
           <string>View Plays</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QGroupBox" name="groupBox_10">
+        <property name="geometry">
+         <rect>
+          <x>430</x>
+          <y>630</y>
+          <width>471</width>
+          <height>231</height>
+         </rect>
+        </property>
+        <property name="title">
+         <string>Users</string>
+        </property>
+        <widget class="QGroupBox" name="groupBox_11">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>30</y>
+           <width>181</width>
+           <height>181</height>
+          </rect>
+         </property>
+         <property name="title">
+          <string>Group by</string>
+         </property>
+         <widget class="QRadioButton" name="UsersDay">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>30</y>
+            <width>141</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Day</string>
+          </property>
+         </widget>
+         <widget class="QRadioButton" name="UsersMonth">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>80</y>
+            <width>141</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Month</string>
+          </property>
+         </widget>
+         <widget class="QRadioButton" name="UsersYear">
+          <property name="geometry">
+           <rect>
+            <x>20</x>
+            <y>130</y>
+            <width>141</width>
+            <height>31</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Year</string>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QDateEdit" name="UsersStartDate">
+         <property name="geometry">
+          <rect>
+           <x>310</x>
+           <y>40</y>
+           <width>141</width>
+           <height>41</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QDateEdit" name="UsersEndDate">
+         <property name="geometry">
+          <rect>
+           <x>310</x>
+           <y>100</y>
+           <width>141</width>
+           <height>41</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_36">
+         <property name="geometry">
+          <rect>
+           <x>210</x>
+           <y>50</y>
+           <width>91</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="text">
+          <string>Start Date:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_37">
+         <property name="geometry">
+          <rect>
+           <x>210</x>
+           <y>100</y>
+           <width>91</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="text">
+          <string>End Date:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="UsersViewBtn">
+         <property name="geometry">
+          <rect>
+           <x>300</x>
+           <y>170</y>
+           <width>151</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">
+background-color: rgb(78, 230, 13);</string>
+         </property>
+         <property name="text">
+          <string>View Users</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </widget>
+       <widget class="QGroupBox" name="groupBox_12">
+        <property name="geometry">
+         <rect>
+          <x>20</x>
+          <y>530</y>
+          <width>391</width>
+          <height>331</height>
+         </rect>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="title">
+         <string>Genres</string>
+        </property>
+        <widget class="QTableWidget" name="tableWidget_3">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>20</y>
+           <width>371</width>
+           <height>131</height>
+          </rect>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color:#FFFFFF ; color: #000000;</string>
+         </property>
+         <property name="editTriggers">
+          <set>QAbstractItemView::NoEditTriggers</set>
+         </property>
+         <property name="verticalScrollMode">
+          <enum>QAbstractItemView::ScrollPerPixel</enum>
+         </property>
+         <property name="horizontalScrollMode">
+          <enum>QAbstractItemView::ScrollPerPixel</enum>
+         </property>
+         <property name="sortingEnabled">
+          <bool>true</bool>
+         </property>
+         <column>
+          <property name="text">
+           <string>ID</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Genre name</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Description</string>
+          </property>
+         </column>
+        </widget>
+        <widget class="QLabel" name="label_38">
+         <property name="geometry">
+          <rect>
+           <x>150</x>
+           <y>160</y>
+           <width>81</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Add Genre</string>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_39">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>190</y>
+           <width>111</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="text">
+          <string>Genre Name: </string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_40">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>230</y>
+           <width>111</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="text">
+          <string>Description:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="genreNameLineEdit">
+         <property name="geometry">
+          <rect>
+           <x>130</x>
+           <y>190</y>
+           <width>241</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="genreDescriptionLineEdit">
+         <property name="geometry">
+          <rect>
+           <x>130</x>
+           <y>240</y>
+           <width>241</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="addGenreBtn">
+         <property name="geometry">
+          <rect>
+           <x>220</x>
+           <y>280</y>
+           <width>151</width>
+           <height>31</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">
+background-color: rgb(78, 230, 13);</string>
+         </property>
+         <property name="text">
+          <string>Add Genre</string>
          </property>
          <property name="checkable">
           <bool>true</bool>

@@ -1,5 +1,4 @@
 import sys, re
-
 from PyQt5 import QtWidgets, uic
 from data import *
 from admin_functions import AdminDashboardHandler
@@ -118,6 +117,10 @@ class SignupWindow(QtWidgets.QMainWindow):
             self.invalidInputLabel.setText("Passwords do not match!")
             return
         
+        pattern = r'^[A-Za-z0-9._]{2,15}$'
+        if not re.match(pattern,username):
+            self.invalidInputLabel.setText("Username must be alphanumeric, and 2 to 15 characters!")
+            return
         
         #Entering valid data into database
         today = datetime.now().strftime("%Y-%m-%d")
@@ -133,9 +136,7 @@ class SignupWindow(QtWidgets.QMainWindow):
         self.view_login = LoginWindow()
         self.view_login.show()
 
-# ===================================================================
-# ADMIN DASHBOARD (MODIFIED)
-# ===================================================================
+
 class AdminDashboard(QtWidgets.QMainWindow):
     def __init__(self, username):
         super().__init__()
@@ -145,7 +146,7 @@ class AdminDashboard(QtWidgets.QMainWindow):
         self.username = username
         self.welcomeLabel.setText(f"Welcome back, {self.username}!")
 
-        # --- Sidebar Page Navigation ---
+        #Sidebar Page Navigation
         self.page_map = {
             self.artistrequestsBtn: self.artistRequestsPage,
             self.analyticsBtn: self.AnalyticsPage,
@@ -153,6 +154,11 @@ class AdminDashboard(QtWidgets.QMainWindow):
             self.reportsBtn: self.ReportsPage,
             self.pendingSongsBtn: self.PendingSongsPage
         }
+        self.welcomeLabel.setText(f"Welcome back, {username}!")
+        self.reportedSongsTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.pendingSongsTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        self.artistsRequestTable.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         
         # Connect sidebar buttons
         for btn in self.page_map:
@@ -161,21 +167,19 @@ class AdminDashboard(QtWidgets.QMainWindow):
         # Connect logout button
         self.logoutBtn.clicked.connect(self.logout)
 
-        # --- Initialize the Logic Handler ---
         # This one line creates the handler and passes it a reference to this window
         self.handler = AdminDashboardHandler(self)
         
-        # --- Delegate Logic to Handler ---
         # Call the handler's methods to load data and connect signals
         self.handler.load_all_data()
         self.handler.connect_signals()
 
-        # --- Set Default View ---
+        # Set initial view to artistsRequestsPage
         self.highlight_button(self.artistrequestsBtn)
         self.stackedWidget.setCurrentWidget(self.artistRequestsPage)
 
     def switch_page(self):
-        """Switches the stackedWidget page based on the button clicked."""
+
         sender = self.sender()
         page = self.page_map.get(sender)
         if page:
@@ -183,7 +187,7 @@ class AdminDashboard(QtWidgets.QMainWindow):
             self.highlight_button(sender)
 
     def highlight_button(self, active_btn):
-        """Applies a 'checked' style to the active sidebar button."""
+
         # Reset all buttons first
         for btn in self.page_map:
             btn.setChecked(False)
@@ -192,7 +196,7 @@ class AdminDashboard(QtWidgets.QMainWindow):
         active_btn.setChecked(True)
 
     def logout(self):
-        """Logs out and returns to the LoginWindow."""
+
         print("Logging out of admin menu...")
         self.close()
         self.loginwindow = LoginWindow()
