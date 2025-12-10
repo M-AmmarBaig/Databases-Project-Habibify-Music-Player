@@ -21,7 +21,7 @@
        <string notr="true">background-color:#FFFFFF ; color: #000000;</string>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="homePage">
        <property name="styleSheet">
@@ -1644,31 +1644,6 @@ background-color: rgb(78, 230, 13);</string>
           <bool>true</bool>
          </property>
         </widget>
-        <widget class="QPushButton" name="S_ReportBtn">
-         <property name="geometry">
-          <rect>
-           <x>380</x>
-           <y>150</y>
-           <width>151</width>
-           <height>41</height>
-          </rect>
-         </property>
-         <property name="font">
-          <font>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">
-background-color: rgb(255, 0, 0);</string>
-         </property>
-         <property name="text">
-          <string>REPORT SONG</string>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
         <widget class="QLineEdit" name="S_ArtistName_3">
          <property name="geometry">
           <rect>
@@ -1712,6 +1687,56 @@ background-color: rgb(255, 0, 0);</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="S_AddPlBtn_2">
+         <property name="geometry">
+          <rect>
+           <x>380</x>
+           <y>150</y>
+           <width>151</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">
+background-color: rgb(78, 230, 13);</string>
+         </property>
+         <property name="text">
+          <string>PLAY</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="S_ReportBtn">
+         <property name="geometry">
+          <rect>
+           <x>110</x>
+           <y>200</y>
+           <width>151</width>
+           <height>41</height>
+          </rect>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>10</pointsize>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">
+background-color: rgb(255, 0, 0);</string>
+         </property>
+         <property name="text">
+          <string>REPORT SONG</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
          </property>
         </widget>
        </widget>

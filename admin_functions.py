@@ -364,7 +364,8 @@ class AdminDashboardHandler:
 
     def load_artist_requests_table(self, data_source=None):
         """Populates the Pending Artist Requests table."""
-        requests = data_source if data_source is not None else get_pending_requests()
+        requests = data_source if data_source is not None else get_pending_requests(
+        )
         table = self.window.artistsRequestTable
         table.setRowCount(len(requests))
 
