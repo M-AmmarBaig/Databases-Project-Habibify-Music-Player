@@ -8,7 +8,7 @@ class PlaylistSongsDialog(QtWidgets.QDialog):
 
     def __init__(self, parent, playlist_name, songs):
         super().__init__(parent)
-        self.setWindowTitle(f"Playlist: {playlist_name}")
+        self.setWindowTitle(f"Playlist:  {playlist_name}")
         self.setFixedSize(600, 400)
         self.setStyleSheet("background-color: #121212; color: #fff;")
 
@@ -36,15 +36,9 @@ class PlaylistSongsDialog(QtWidgets.QDialog):
         layout.addWidget(self.table)
 
         close_btn = QtWidgets.QPushButton("Close")
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #1DB954;
-                color: white;
-                font-size: 14px;
-                padding: 10px;
-                border-radius: 5px;
-            }
-        """)
+        close_btn.setStyleSheet(
+            "background-color: #1DB954; color: white; padding: 10px; border-radius: 5px;"
+        )
         close_btn.clicked.connect(self.close)
         layout.addWidget(close_btn)
 
@@ -119,7 +113,7 @@ class ReportSongDialog(QtWidgets.QDialog):
 
         self.reason_combo = QtWidgets.QComboBox()
         self.reason_combo.setStyleSheet(
-            "background-color:  #FFFFFF; color: #000000; padding: 5px;")
+            "background-color: #FFFFFF; color: #000000; padding: 5px;")
         self.reason_combo.addItems([
             "Inappropriate Content", "Copyright Violation",
             "Audio Quality Issues", "Hate Speech", "Violence", "Other"
@@ -154,6 +148,106 @@ class ReportSongDialog(QtWidgets.QDialog):
     def submit_report(self):
         self.report_reason = self.reason_combo.currentText()
         self.accept()
+
+
+class AnalyticsGraphDialog(QtWidgets.QDialog):
+    """Dialog to display analytics graphs.  Accepts data as 2D array [[x, y], ...]"""
+
+    def __init__(self, parent, title, data, x_label, y_label):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setFixedSize(800, 600)
+        self.setStyleSheet("background-color:  #121212; color: #fff;")
+
+        layout = QtWidgets.QVBoxLayout(self)
+
+        title_label = QtWidgets.QLabel(title)
+        title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
+        title_label.setAlignment(QtCore.Qt.AlignCenter)
+        layout.addWidget(title_label)
+
+        try:
+            from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+            from matplotlib.figure import Figure
+
+            fig = Figure(figsize=(10, 6), facecolor='#121212')
+            canvas = FigureCanvas(fig)
+            ax = fig.add_subplot(111)
+
+            ax.set_facecolor('#1e1e1e')
+            ax.tick_params(colors='white')
+            ax.xaxis.label.set_color('white')
+            ax.yaxis.label.set_color('white')
+            ax.title.set_color('white')
+            for spine in ax.spines.values():
+                spine.set_color('white')
+
+            if data:
+                x_values = [item[0] for item in data]
+                y_values = [item[1] for item in data]
+
+                ax.plot(x_values,
+                        y_values,
+                        marker='o',
+                        linestyle='-',
+                        linewidth=2,
+                        color='#1DB954',
+                        markersize=8)
+                ax.fill_between(x_values, y_values, alpha=0.3, color='#1DB954')
+
+                ax.set_xlabel(x_label, fontsize=12, color='white')
+                ax.set_ylabel(y_label, fontsize=12, color='white')
+                ax.set_title(title.replace('\n', ' '),
+                             fontsize=14,
+                             color='white')
+                ax.grid(True, alpha=0.3, color='gray')
+
+                if len(x_values) > 6:
+                    ax.set_xticks(x_values[::max(1, len(x_values) // 6)])
+                fig.autofmt_xdate(rotation=45)
+            else:
+                ax.text(0.5,
+                        0.5,
+                        'No data available',
+                        ha='center',
+                        va='center',
+                        fontsize=16,
+                        color='white',
+                        transform=ax.transAxes)
+
+            fig.tight_layout()
+            layout.addWidget(canvas)
+
+        except ImportError:
+            error_label = QtWidgets.QLabel(
+                "Matplotlib not installed.\npip install matplotlib")
+            error_label.setStyleSheet("font-size: 14px; color: #ff6666;")
+            error_label.setAlignment(QtCore.Qt.AlignCenter)
+            layout.addWidget(error_label)
+
+            if data:
+                table = QtWidgets.QTableWidget()
+                table.setColumnCount(2)
+                table.setHorizontalHeaderLabels([x_label, y_label])
+                table.setStyleSheet(
+                    "background-color: #FFFFFF; color: #000000;")
+                table.setRowCount(len(data))
+
+                for row, item in enumerate(data):
+                    table.setItem(row, 0,
+                                  QtWidgets.QTableWidgetItem(str(item[0])))
+                    table.setItem(row, 1,
+                                  QtWidgets.QTableWidgetItem(str(item[1])))
+
+                table.resizeColumnsToContents()
+                layout.addWidget(table)
+
+        close_btn = QtWidgets.QPushButton("Close")
+        close_btn.setStyleSheet(
+            "background-color: #1DB954; color: white; padding: 10px; border-radius: 5px;"
+        )
+        close_btn.clicked.connect(self.close)
+        layout.addWidget(close_btn)
 
 
 class UserDashboardHandler:
@@ -221,8 +315,7 @@ class UserDashboardHandler:
             self.handle_search_add_to_queue)
         self.window.S_AddPlBtn.clicked.connect(
             self.handle_search_add_to_playlist)
-        self.window.S_AddPlBtn_2.clicked.connect(
-            self.handle_search_play_song)  # New PLAY button
+        self.window.S_AddPlBtn_2.clicked.connect(self.handle_search_play_song)
         self.window.S_ReportBtn.clicked.connect(self.handle_report_song)
 
         # Analytics Page
@@ -231,6 +324,7 @@ class UserDashboardHandler:
         self.window.S_AddQueueBtn_2.clicked.connect(self.handle_add_new_song)
         self.window.S_ReportBtn_3.clicked.connect(
             self.handle_delete_artist_song)
+        self.window.RevenueViewBtn.clicked.connect(self.handle_view_analytics)
 
         # Profile Page
         self.window.tableWidget.cellClicked.connect(
@@ -241,10 +335,75 @@ class UserDashboardHandler:
     def load_all_data(self):
         self.load_home_data()
         self.load_library_data()
-        self.load_search_data()
         self.load_analytics_data()
         self.load_profile_data()
+        self.clear_search_form()
         self.switch_page(self.window.homePage, self.window.homeBtn)
+
+    # ==================== UTILITY METHODS ====================
+
+    def get_song_genre(self, song_name):
+        for data in get_approved_songs().values():
+            if data[0] == song_name:
+                return data[2]
+        return "Unknown"
+
+    def get_analytics_data(self, analytics_type, group_by, start_date,
+                           end_date) -> list:
+        """Get analytics data as 2D array [[x, y], ...]"""
+        if analytics_type == "views":
+            raw_data = get_artist_views_data(self.username)
+        else:
+            raw_data = get_artist_revenue_data(self.username)
+
+        if not raw_data:
+            return []
+
+        # Filter by date range
+        filtered = {
+            k: v
+            for k, v in raw_data.items() if start_date <= k <= end_date
+        }
+
+        if not filtered:
+            return []
+
+        # Group by period
+        grouped = {}
+        for date_str, value in sorted(filtered.items()):
+            if group_by == "day":
+                key = date_str
+            elif group_by == "month":
+                key = date_str[:7]
+            elif group_by == "year":
+                key = date_str[:4]
+            else:
+                key = date_str
+
+            grouped[key] = grouped.get(key, 0) + value
+
+        return [[k, v] for k, v in sorted(grouped.items())]
+
+    def add_song_to_playlist_dialog(self, song_name, artist_name):
+        user_playlists = get_user_playlists(self.username)
+        playlist_names = list(user_playlists.keys())
+
+        if not playlist_names:
+            QtWidgets.QMessageBox.warning(self.window, "No Playlists",
+                                          "Create a playlist first!")
+            return
+
+        dialog = AddToPlaylistDialog(self.window, playlist_names)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            selected_playlist = dialog.selected_playlist
+            genre = self.get_song_genre(song_name)
+            add_song_to_playlist(self.username, selected_playlist,
+                                 [song_name, artist_name, genre])
+            self.load_playlists_table()
+            self.window.S_ArtistName_3.setText(selected_playlist)
+            QtWidgets.QMessageBox.information(
+                self.window, "Added",
+                f"'{song_name}' added to '{selected_playlist}'.")
 
     # ==================== NAVIGATION ====================
 
@@ -271,7 +430,9 @@ class UserDashboardHandler:
         self.load_recent_rotation_table()
         self.load_top_artists_table()
         self.load_top_songs_table()
-        self.clear_recent_rotation_form()
+        self.window.RR_SongName.clear()
+        self.window.RR_ArtistName.clear()
+        self.window.RR_Listens.clear()
 
     def load_recent_rotation_table(self):
         recent_rotation = get_user_recent_rotation(self.username)
@@ -308,12 +469,13 @@ class UserDashboardHandler:
         self.window.RR_SongName.setText(table.item(row, 0).text())
         self.window.RR_ArtistName.setText(table.item(row, 1).text())
         self.window.RR_Listens.setText(table.item(row, 2).text())
-        self.load_song_image(self.window.RR_SongImage)
 
-    def clear_recent_rotation_form(self):
-        self.window.RR_SongName.clear()
-        self.window.RR_ArtistName.clear()
-        self.window.RR_Listens.clear()
+        pixmap = QtGui.QPixmap("Song_images/default_song_image.jpg")
+        if not pixmap.isNull():
+            self.window.RR_SongImage.setPixmap(
+                pixmap.scaled(self.window.RR_SongImage.size(),
+                              QtCore.Qt.KeepAspectRatio,
+                              QtCore.Qt.SmoothTransformation))
 
     def handle_play_song(self):
         song_name = self.window.RR_SongName.text()
@@ -321,7 +483,6 @@ class UserDashboardHandler:
             QtWidgets.QMessageBox.warning(self.window, "No Song Selected",
                                           "Please select a song to play.")
             return
-
         if self.music_player:
             self.music_player.play_song_by_name(song_name)
 
@@ -349,7 +510,6 @@ class UserDashboardHandler:
             QtWidgets.QMessageBox.warning(self.window, "No Song Selected",
                                           "Please select a song.")
             return
-
         self.add_song_to_playlist_dialog(song_name,
                                          self.window.RR_ArtistName.text())
 
@@ -358,7 +518,9 @@ class UserDashboardHandler:
     def load_library_data(self):
         self.load_playlists_table()
         self.load_queue_table()
-        self.clear_playlist_form()
+        self.window.PL_Name.clear()
+        self.window.PL_Visits.clear()
+        self.window.PL_Date.setDate(QtCore.QDate.currentDate())
 
     def load_playlists_table(self):
         user_playlists = get_user_playlists(self.username)
@@ -391,11 +553,6 @@ class UserDashboardHandler:
         self.window.PL_Visits.setText(table.item(row, 2).text())
         self.window.PL_Date.setDate(
             QtCore.QDate.fromString(table.item(row, 3).text(), "yyyy-MM-dd"))
-
-    def clear_playlist_form(self):
-        self.window.PL_Name.clear()
-        self.window.PL_Visits.clear()
-        self.window.PL_Date.setDate(QtCore.QDate.currentDate())
 
     def populate_queue_selection(self, row, column):
         self.selected_queue_row = row
@@ -449,7 +606,9 @@ class UserDashboardHandler:
         if reply == QtWidgets.QMessageBox.Yes:
             delete_user_playlist(self.username, playlist_name)
             self.load_playlists_table()
-            self.clear_playlist_form()
+            self.window.PL_Name.clear()
+            self.window.PL_Visits.clear()
+            self.window.PL_Date.setDate(QtCore.QDate.currentDate())
             QtWidgets.QMessageBox.information(self.window, "Deleted",
                                               f"'{playlist_name}' deleted.")
 
@@ -521,13 +680,10 @@ class UserDashboardHandler:
 
     # ==================== SEARCH PAGE ====================
 
-    def load_search_data(self):
+    def clear_search_form(self):
         self.window.searchSongs_Table.setRowCount(0)
         self.window.searchArtists_Table.setRowCount(0)
         self.window.artistSongs_Table.setRowCount(0)
-        self.clear_search_form()
-
-    def clear_search_form(self):
         self.window.S_SongName.clear()
         self.window.S_ArtistName.clear()
         self.window.S_ArtistName_3.clear()
@@ -620,18 +776,15 @@ class UserDashboardHandler:
             QtWidgets.QMessageBox.warning(self.window, "No Song Selected",
                                           "Please select a song.")
             return
-
         self.add_song_to_playlist_dialog(song_name,
                                          self.window.S_ArtistName.text())
 
     def handle_search_play_song(self):
-        """Handle the PLAY button in search page - plays the selected song."""
         song_name = self.window.S_SongName.text()
         if not song_name:
             QtWidgets.QMessageBox.warning(self.window, "No Song Selected",
                                           "Please select a song to play.")
             return
-
         if self.music_player:
             self.music_player.play_song_by_name(song_name)
 
@@ -652,7 +805,19 @@ class UserDashboardHandler:
 
     def load_analytics_data(self):
         self.load_artist_songs_table()
-        self.clear_artist_song_form()
+        self.window.S_SongName_2.clear()
+        self.window.S_SongName_3.clear()
+        self.window.comboBox.setCurrentIndex(0)
+        self.window.PL_Date_2.setDate(QtCore.QDate.currentDate())
+        self.selected_artist_song_id = None
+
+        # Setup analytics defaults
+        today = QtCore.QDate.currentDate()
+        one_month_ago = today.addMonths(-1)
+        self.window.ReveueStartDate.setDate(one_month_ago)
+        self.window.ReveueStartDate_2.setDate(today)
+        self.window.RevenueMonth.setChecked(True)
+        self.window.RevenueDay_2.setChecked(True)
 
     def load_artist_songs_table(self):
         artist_songs = get_artist_songs(self.username)
@@ -685,13 +850,6 @@ class UserDashboardHandler:
                 self.selected_artist_song_id = song_id
                 break
 
-    def clear_artist_song_form(self):
-        self.window.S_SongName_2.clear()
-        self.window.S_SongName_3.clear()
-        self.window.comboBox.setCurrentIndex(0)
-        self.window.PL_Date_2.setDate(QtCore.QDate.currentDate())
-        self.selected_artist_song_id = None
-
     def handle_add_new_song(self):
         song_name = self.window.S_SongName_2.text().strip()
         file_path = self.window.S_SongName_3.text().strip()
@@ -721,7 +879,11 @@ class UserDashboardHandler:
         ]
 
         self.load_artist_songs_table()
-        self.clear_artist_song_form()
+        self.window.S_SongName_2.clear()
+        self.window.S_SongName_3.clear()
+        self.window.comboBox.setCurrentIndex(0)
+        self.window.PL_Date_2.setDate(QtCore.QDate.currentDate())
+        self.selected_artist_song_id = None
         QtWidgets.QMessageBox.information(
             self.window, "Submitted", f"'{song_name}' submitted for approval.")
 
@@ -743,9 +905,65 @@ class UserDashboardHandler:
         if reply == QtWidgets.QMessageBox.Yes:
             delete_artist_song(self.username, self.selected_artist_song_id)
             self.load_artist_songs_table()
-            self.clear_artist_song_form()
+            self.window.S_SongName_2.clear()
+            self.window.S_SongName_3.clear()
+            self.window.comboBox.setCurrentIndex(0)
+            self.window.PL_Date_2.setDate(QtCore.QDate.currentDate())
+            self.selected_artist_song_id = None
             QtWidgets.QMessageBox.information(self.window, "Deleted",
                                               f"'{song_name}' deleted.")
+
+    def handle_view_analytics(self):
+        # Get group by selection
+        group_by = "day"
+        if self.window.RevenueDay.isChecked():
+            group_by = "day"
+        elif self.window.RevenueMonth.isChecked():
+            group_by = "month"
+        elif self.window.RevenueYear.isChecked():
+            group_by = "year"
+
+        # Get analytics type
+        analytics_type = "views"
+        if self.window.RevenueDay_2.isChecked():
+            analytics_type = "views"
+        elif self.window.RevenueMonth_2.isChecked():
+            analytics_type = "revenue"
+
+        # Get date range
+        start_date = self.window.ReveueStartDate.date().toString("yyyy-MM-dd")
+        end_date = self.window.ReveueStartDate_2.date().toString("yyyy-MM-dd")
+
+        if start_date > end_date:
+            QtWidgets.QMessageBox.warning(
+                self.window, "Invalid Dates",
+                "Start date must be before end date.")
+            return
+
+        # Get data as 2D array [[x, y], ...]
+        data = self.get_analytics_data(analytics_type, group_by, start_date,
+                                       end_date)
+
+        if not data:
+            QtWidgets.QMessageBox.information(
+                self.window, "No Data",
+                f"No {analytics_type} data available for the selected date range.\n\n"
+                "Note: Analytics data is only available for artists.")
+            return
+
+        # Set labels
+        if analytics_type == "views":
+            title = f"Views Analytics\n({start_date} to {end_date})"
+            y_label = "Views"
+        else:
+            title = f"Revenue Analytics\n({start_date} to {end_date})"
+            y_label = "Revenue ($)"
+
+        x_label = "Date" if group_by == "day" else group_by.capitalize()
+
+        dialog = AnalyticsGraphDialog(self.window, title, data, x_label,
+                                      y_label)
+        dialog.exec_()
 
     # ==================== PROFILE PAGE ====================
 
@@ -814,42 +1032,3 @@ class UserDashboardHandler:
                 QtWidgets.QMessageBox.information(self.window, "Deleted",
                                                   "Account deleted.")
                 self.window.logout()
-
-    # ==================== HELPER METHODS ====================
-
-    def get_song_genre(self, song_name):
-        for data in get_approved_songs().values():
-            if data[0] == song_name:
-                return data[2]
-        return "Unknown"
-
-    def add_song_to_playlist_dialog(self, song_name, artist_name):
-        user_playlists = get_user_playlists(self.username)
-        playlist_names = list(user_playlists.keys())
-
-        if not playlist_names:
-            QtWidgets.QMessageBox.warning(self.window, "No Playlists",
-                                          "Create a playlist first!")
-            return
-
-        dialog = AddToPlaylistDialog(self.window, playlist_names)
-        if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            selected_playlist = dialog.selected_playlist
-            genre = self.get_song_genre(song_name)
-            add_song_to_playlist(self.username, selected_playlist,
-                                 [song_name, artist_name, genre])
-            self.load_playlists_table()
-
-            # Update the playlist field to show which playlist was selected
-            self.window.S_ArtistName_3.setText(selected_playlist)
-
-            QtWidgets.QMessageBox.information(
-                self.window, "Added",
-                f"'{song_name}' added to '{selected_playlist}'.")
-
-    def load_song_image(self, label):
-        pixmap = QtGui.QPixmap("Song_images/default_song_image.jpg")
-        if not pixmap.isNull():
-            label.setPixmap(
-                pixmap.scaled(label.size(), QtCore.Qt.KeepAspectRatio,
-                              QtCore.Qt.SmoothTransformation))
