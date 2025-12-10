@@ -1,13 +1,83 @@
 import sys
 from PyQt5 import QtWidgets, QtCore, QtGui
 from data import *  # Import all data and functions from data.py
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from datetime import datetime, timedelta
+
+
+class AnalyticsGraphDialog(QtWidgets.QDialog):
+    """Dialog window to display analytics graphs."""
+
+    def __init__(self,
+                 parent,
+                 title,
+                 x_data,
+                 y_data,
+                 x_label,
+                 y_label,
+                 graph_type="line"):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self.setFixedSize(800, 600)
+
+        layout = QtWidgets.QVBoxLayout(self)
+
+        # Create matplotlib figure
+        self.canvas = FigureCanvas(Figure(figsize=(8, 5)))
+        layout.addWidget(self.canvas)
+
+        self.ax = self.canvas.figure.add_subplot(111)
+        self.plot_graph(x_data, y_data, x_label, y_label, title, graph_type)
+
+        # Close button
+        close_btn = QtWidgets.QPushButton("Close")
+        close_btn.clicked.connect(self.close)
+        layout.addWidget(close_btn)
+
+    def plot_graph(self, x_data, y_data, x_label, y_label, title, graph_type):
+        self.ax.clear()
+
+        if graph_type == "line":
+            self.ax.plot(x_data,
+                         y_data,
+                         marker='o',
+                         linestyle='-',
+                         linewidth=2,
+                         color='#1DB954')
+            self.ax.fill_between(x_data, y_data, alpha=0.3, color='#1DB954')
+        elif graph_type == "bar":
+            bars = self.ax.bar(x_data,
+                               y_data,
+                               color='#1DB954',
+                               edgecolor='black')
+            # Add value labels on bars
+            for bar, val in zip(bars, y_data):
+                self.ax.text(bar.get_x() + bar.get_width() / 2,
+                             bar.get_height() + 0.5,
+                             str(int(val)),
+                             ha='center',
+                             va='bottom',
+                             fontsize=9)
+
+        self.ax.set_title(title, fontsize=14, fontweight='bold')
+        self.ax.set_xlabel(x_label, fontsize=12)
+        self.ax.set_ylabel(y_label, fontsize=12)
+        self.ax.grid(True, alpha=0.3)
+
+        # Rotate x-axis labels if there are many
+        if len(x_data) > 5:
+            self.ax.tick_params(axis='x', rotation=45)
+
+        self.canvas.figure.tight_layout()
+        self.canvas.draw()
 
 
 class AdminDashboardHandler:
     """
-    Handles all logic for the AdminDashboard.
+    Handles all logic for the AdminDashboard. 
     This class loads data into tables, populates forms when rows are clicked,
-    and executes actions (like delete, approve, reject).
+    and executes actions (like delete, approve, reject). 
     """
 
     def __init__(self, window: QtWidgets.QMainWindow):
@@ -56,6 +126,11 @@ class AdminDashboardHandler:
             self.handle_update_subscription_plan)
         self.window.addGenreBtn.clicked.connect(self.handle_add_genre)
 
+        # --- Analytics Page (Revenue, Plays, Users) ---
+        self.window.RevenueViewBtn.clicked.connect(self.handle_view_revenue)
+        self.window.PlaysViewBtn.clicked.connect(self.handle_view_plays)
+        self.window.UsersViewBtn.clicked.connect(self.handle_view_users)
+
     def load_all_data(self):
         """Loads data into all tables on the dashboard."""
         self.load_artist_requests_table()
@@ -63,18 +138,233 @@ class AdminDashboardHandler:
         self.load_pending_songs_table()
         self.load_reported_songs_table()
         self.load_subscription_plans_table()
+        self.load_genre_table()
 
     # --- Helper to convert string to QDate ---
     def string_to_qdate(self, date_str: str) -> QtCore.QDate:
         """Converts a 'YYYY-MM-DD' string to a QDate object."""
         return QtCore.QDate.fromString(date_str, "yyyy-MM-dd")
 
-    # 1. ARTIST REQUESTS
+    def qdate_to_string(self, qdate: QtCore.QDate) -> str:
+        """Converts a QDate object to 'YYYY-MM-DD' string."""
+        return qdate.toString("yyyy-MM-dd")
+
+    # --- Analytics Helper Methods ---
+    def get_selected_grouping(self, day_radio, month_radio, year_radio) -> str:
+        """Returns the selected grouping period."""
+        if day_radio.isChecked():
+            return "day"
+        elif month_radio.isChecked():
+            return "month"
+        elif year_radio.isChecked():
+            return "year"
+        return "month"  # Default
+
+    def filter_data_by_date_range(self, data_dict: dict, start_date: str,
+                                  end_date: str) -> dict:
+        """Filters data dictionary by date range."""
+        filtered = {}
+        for date_str, value in data_dict.items():
+            if start_date <= date_str <= end_date:
+                filtered[date_str] = value
+        return filtered
+
+    def group_data_by_period(self, data_dict: dict, period: str) -> dict:
+        """Groups data by the specified period (day, month, year)."""
+        grouped = {}
+
+        for date_str, value in sorted(data_dict.items()):
+            if period == "day":
+                key = date_str
+            elif period == "month":
+                key = date_str[:7]  # YYYY-MM
+            elif period == "year":
+                key = date_str[:4]  # YYYY
+            else:
+                key = date_str
+
+            if key in grouped:
+                grouped[key] += value
+            else:
+                grouped[key] = value
+
+        return grouped
+
+    def filter_users_by_date_range(self, users_dict: dict, start_date: str,
+                                   end_date: str) -> dict:
+        """Filters users by their join date within the specified range."""
+        filtered = {}
+        for username, data in users_dict.items():
+            join_date = data[7]  # date_joined is at index 7
+            if start_date <= join_date <= end_date:
+                filtered[username] = data
+        return filtered
+
+    def count_users_by_period(self, users_dict: dict, period: str) -> dict:
+        """Counts users grouped by the specified period."""
+        counts = {}
+
+        for username, data in users_dict.items():
+            date_str = data[7]  # date_joined
+
+            if period == "day":
+                key = date_str
+            elif period == "month":
+                key = date_str[:7]  # YYYY-MM
+            elif period == "year":
+                key = date_str[:4]  # YYYY
+            else:
+                key = date_str
+
+            if key in counts:
+                counts[key] += 1
+            else:
+                counts[key] = 1
+
+        return dict(sorted(counts.items()))
+
+    # --- Analytics Handlers ---
+    def handle_view_revenue(self):
+        """Handles the 'View Revenue' button click."""
+        # Get date range
+        start_date = self.qdate_to_string(self.window.ReveueStartDate.date())
+        end_date = self.qdate_to_string(self.window.ReveueEndDate.date())
+
+        # Validate date range
+        if start_date > end_date:
+            QtWidgets.QMessageBox.warning(
+                self.window, "Invalid Date Range",
+                "Start date must be before or equal to end date.")
+            return
+
+        # Get grouping period
+        period = self.get_selected_grouping(self.window.RevenueDay,
+                                            self.window.RevenueMonth,
+                                            self.window.RevenueYear)
+
+        # Filter and group data
+        filtered_data = self.filter_data_by_date_range(RevenueData, start_date,
+                                                       end_date)
+
+        if not filtered_data:
+            QtWidgets.QMessageBox.information(
+                self.window, "No Data",
+                "No revenue data found for the selected date range.")
+            return
+
+        grouped_data = self.group_data_by_period(filtered_data, period)
+
+        # Prepare data for plotting
+        x_data = list(grouped_data.keys())
+        y_data = list(grouped_data.values())
+
+        # Show graph dialog
+        dialog = AnalyticsGraphDialog(
+            self.window,
+            f"Revenue Analysis (Grouped by {period. capitalize()})",
+            x_data,
+            y_data,
+            "Date" if period == "day" else period.capitalize(),
+            "Revenue ($)",
+            graph_type="line")
+        dialog.exec_()
+
+    def handle_view_plays(self):
+        """Handles the 'View Plays' button click."""
+        # Get date range
+        start_date = self.qdate_to_string(self.window.PlaysStartDate.date())
+        end_date = self.qdate_to_string(self.window.PlaysEndDate.date())
+
+        # Validate date range
+        if start_date > end_date:
+            QtWidgets.QMessageBox.warning(
+                self.window, "Invalid Date Range",
+                "Start date must be before or equal to end date.")
+            return
+
+        # Get grouping period
+        period = self.get_selected_grouping(self.window.PlaysDay,
+                                            self.window.PlaysMonth,
+                                            self.window.PlaysYear)
+
+        # Filter and group data
+        filtered_data = self.filter_data_by_date_range(PlaysData, start_date,
+                                                       end_date)
+
+        if not filtered_data:
+            QtWidgets.QMessageBox.information(
+                self.window, "No Data",
+                "No plays data found for the selected date range.")
+            return
+
+        grouped_data = self.group_data_by_period(filtered_data, period)
+
+        # Prepare data for plotting
+        x_data = list(grouped_data.keys())
+        y_data = list(grouped_data.values())
+
+        # Show graph dialog
+        dialog = AnalyticsGraphDialog(
+            self.window,
+            f"Plays Analysis (Grouped by {period. capitalize()})",
+            x_data,
+            y_data,
+            "Date" if period == "day" else period.capitalize(),
+            "Total Plays",
+            graph_type="line")
+        dialog.exec_()
+
+    def handle_view_users(self):
+        """Handles the 'View Users' button click."""
+        # Get date range
+        start_date = self.qdate_to_string(self.window.UsersStartDate.date())
+        end_date = self.qdate_to_string(self.window.UsersEndDate.date())
+
+        # Validate date range
+        if start_date > end_date:
+            QtWidgets.QMessageBox.warning(
+                self.window, "Invalid Date Range",
+                "Start date must be before or equal to end date.")
+            return
+
+        # Get grouping period
+        period = self.get_selected_grouping(self.window.UsersDay,
+                                            self.window.UsersMonth,
+                                            self.window.UsersYear)
+
+        # Filter users by date range
+        filtered_users = self.filter_users_by_date_range(
+            Users, start_date, end_date)
+
+        if not filtered_users:
+            QtWidgets.QMessageBox.information(
+                self.window, "No Data",
+                "No users joined during the selected date range.")
+            return
+
+        # Count users by period
+        user_counts = self.count_users_by_period(filtered_users, period)
+
+        # Prepare data for plotting
+        x_data = list(user_counts.keys())
+        y_data = list(user_counts.values())
+
+        # Show graph dialog
+        dialog = AnalyticsGraphDialog(
+            self.window,
+            f"New Users Analysis (Grouped by {period.capitalize()})",
+            x_data,
+            y_data,
+            "Date" if period == "day" else period.capitalize(),
+            "New Users",
+            graph_type="bar")
+        dialog.exec_()
+
+    # 1.  ARTIST REQUESTS
 
     def load_artist_requests_table(self, data_source=None):
         """Populates the Pending Artist Requests table."""
-        requests = data_source if data_source is not None else get_pending_requests(
-        )
+        requests = data_source if data_source is not None else get_pending_requests()
         table = self.window.artistsRequestTable
         table.setRowCount(len(requests))
 
@@ -210,7 +500,7 @@ class AdminDashboardHandler:
 
         reply = QtWidgets.QMessageBox.question(
             self.window, "Confirm Deletion",
-            f"Are you sure you want to delete the user '{username}'? This action cannot be undone.",
+            f"Are you sure you want to delete the user '{username}'?  This action cannot be undone.",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
 
         if reply == QtWidgets.QMessageBox.Yes:
@@ -293,7 +583,7 @@ class AdminDashboardHandler:
         if song_data:
             song_name = song_data[0]
             song_path = song_data[4]
-            # This just shows a popup. Real playback would need a media library.
+            # This just shows a popup.  Real playback would need a media library.
             QtWidgets.QMessageBox.information(
                 self.window, "Playing Song",
                 f"Simulating playback of: {song_name}\n(from {song_path})")
