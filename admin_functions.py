@@ -1,12 +1,66 @@
 import sys
+import pyodbc
 from PyQt5 import QtWidgets, QtCore, QtGui
-from data import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+# ==================== DATABASE CONNECTION ====================
+
+server = 'SAROSH-PC\SQLSERVERSEM3'
+database = 'HabibifyDatabase'
+use_windows_authentication = True
+username = 'your_username'
+password = 'your_password'
+
+
+def get_connection():
+    if use_windows_authentication:
+        connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
+    else:
+        connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+
+    return pyodbc.connect(connection_string)
+
+
+def execute_query(query,
+                  params=None,
+                  fetch_one=False,
+                  fetch_all=True,
+                  commit=False):
+    connection = None
+    cursor = None
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+
+        if commit:
+            connection.commit()
+            return cursor.rowcount
+        elif fetch_one:
+            return cursor.fetchone()
+        elif fetch_all:
+            return cursor.fetchall()
+        else:
+            return None
+
+    except pyodbc.Error as e:
+        print(f"Database error:  {e}")
+        if connection:
+            connection.rollback()
+        raise
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
 
 class AnalyticsGraphDialog(QtWidgets.QDialog):
-    """Dialog window to display analytics graphs."""
 
     def __init__(self,
                  parent,
@@ -15,15 +69,6 @@ class AnalyticsGraphDialog(QtWidgets.QDialog):
                  x_label,
                  y_label,
                  graph_type="line"):
-        """
-        Args:
-            parent: Parent widget
-            title: Graph title
-            data: 2D array [[x, y], [x, y], ...]
-            x_label: Label for x-axis
-            y_label: Label for y-axis
-            graph_type: 'line' or 'bar'
-        """
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setFixedSize(800, 600)
@@ -53,7 +98,7 @@ class AnalyticsGraphDialog(QtWidgets.QDialog):
             self.canvas.draw()
             return
 
-        x_data = [item[0] for item in data]
+        x_data = [str(item[0]) for item in data]
         y_data = [item[1] for item in data]
 
         if graph_type == "line":
@@ -89,14 +134,15 @@ class AnalyticsGraphDialog(QtWidgets.QDialog):
         self.canvas.draw()
 
 
+# ==================== ADMIN DASHBOARD HANDLER ====================
+
+
 class AdminDashboardHandler:
-    """Handles all logic for the Admin Dashboard."""
 
     def __init__(self, window: QtWidgets.QMainWindow):
         self.window = window
 
     def connect_signals(self):
-        """Connects all UI signals to their handler methods."""
         # Artist Requests Page
         self.window.artistsRequestTable.cellClicked.connect(
             self.populate_artist_request_form)
@@ -143,18 +189,24 @@ class AdminDashboardHandler:
         self.window.UsersViewBtn.clicked.connect(self.handle_view_users)
 
     def load_all_data(self):
-        """Loads data into all tables on the dashboard."""
-        self.load_artist_requests_table()
-        self.load_users_table()
-        self.load_pending_songs_table()
-        self.load_reported_songs_table()
-        self.load_subscription_plans_table()
-        self.load_genre_table()
+        try:
+            self.load_artist_requests_table()
+            self.load_users_table()
+            self.load_pending_songs_table()
+            self.load_reported_songs_table()
+            self.load_subscription_plans_table()
+            self.load_genre_table()
+        except Exception as e:
+            self.show_error(f"Failed to load data from database:\n{str(e)}")
 
     # ==================== UTILITY METHODS ====================
 
-    def string_to_qdate(self, date_str: str) -> QtCore.QDate:
-        return QtCore.QDate.fromString(date_str, "yyyy-MM-dd")
+    def string_to_qdate(self, date_val) -> QtCore.QDate:
+        if date_val is None:
+            return QtCore.QDate.currentDate()
+        if isinstance(date_val, str):
+            return QtCore.QDate.fromString(date_val, "yyyy-MM-dd")
+        return QtCore.QDate(date_val.year, date_val.month, date_val.day)
 
     def qdate_to_string(self, qdate: QtCore.QDate) -> str:
         return qdate.toString("yyyy-MM-dd")
@@ -168,196 +220,414 @@ class AdminDashboardHandler:
             return "year"
         return "month"
 
-    def get_analytics_data(self, raw_data: dict, start_date: str,
-                           end_date: str, period: str) -> list:
+    def show_error(self, message):
+        QtWidgets.QMessageBox.critical(self.window, "Error", message)
+
+    def show_success(self, message):
+        QtWidgets.QMessageBox.information(self.window, "Success", message)
+
+    def show_warning(self, message):
+        QtWidgets.QMessageBox.warning(self.window, "Warning", message)
+
+    # ==================== DATABASE QUERIES ====================
+
+    def db_get_all_users(self):
+        query = """
+            SELECT Username, Password, UserType, EmailAddress, UserStatus, 
+                   PhoneNo, FullName, DateJoined
+            FROM Users
+            WHERE UserStatus != 'Deleted'
+            ORDER BY Username
         """
-        Filters and groups analytics data, returns 2D array [[x, y], ...]
-        
-        Args:
-            raw_data: Dictionary {date_string: value}
-            start_date: Start date string (YYYY-MM-DD)
-            end_date: End date string (YYYY-MM-DD)
-            period: 'day', 'month', or 'year'
-        
-        Returns:
-            List of [x, y] pairs
+        return execute_query(query)
+
+    def db_get_user(self, username):
+        query = """
+            SELECT Username, Password, UserType, EmailAddress, UserStatus, 
+                   PhoneNo, FullName, DateJoined
+            FROM Users 
+            WHERE Username = ?
         """
-        # Filter by date range
-        filtered = {
-            k: v
-            for k, v in raw_data.items() if start_date <= k <= end_date
-        }
+        return execute_query(query, (username, ), fetch_one=True)
 
-        if not filtered:
-            return []
-
-        # Group by period
-        grouped = {}
-        for date_str, value in sorted(filtered.items()):
-            if period == "day":
-                key = date_str
-            elif period == "month":
-                key = date_str[:7]
-            elif period == "year":
-                key = date_str[:4]
-            else:
-                key = date_str
-
-            grouped[key] = grouped.get(key, 0) + value
-
-        return [[k, v] for k, v in sorted(grouped.items())]
-
-    def get_user_count_data(self, start_date: str, end_date: str,
-                            period: str) -> list:
+    def db_search_users(self, search_term):
+        query = """
+            SELECT Username, Password, UserType, EmailAddress, UserStatus, 
+                   PhoneNo, FullName, DateJoined
+            FROM Users
+            WHERE (Username LIKE ? OR EmailAddress LIKE ?  OR FullName LIKE ?)
+              AND UserStatus != 'Deleted'
+            ORDER BY Username
         """
-        Counts users by join date, returns 2D array [[x, y], ...]
+        pattern = f"%{search_term}%"
+        return execute_query(query, (pattern, pattern, pattern))
+
+    def db_delete_user(self, username):
+        query = "UPDATE Users SET UserStatus = 'Deleted' WHERE Username = ?"
+        return execute_query(query, (username, ), commit=True) > 0
+
+    def db_get_pending_artist_requests(self):
+        query = """
+            SELECT u.Username, u.FullName, u.EmailAddress,
+                   ISNULL(p.PlanName, 'Free') as Subscription,
+                   u.DateJoined
+            FROM Users u
+            LEFT JOIN Subscription s ON u.Username = s.Username
+            LEFT JOIN [Plans] p ON s.PlanID = p.PlanID
+            WHERE u.UserType = 'PendingArtist' AND u.UserStatus = 'Active'
+            ORDER BY u.DateJoined DESC
         """
-        users = get_all_users()
-        counts = {}
+        return execute_query(query)
 
-        for username, data in users.items():
-            join_date = data[7]
-            if not (start_date <= join_date <= end_date):
-                continue
+    def db_search_artist_requests(self, search_term):
+        query = """
+            SELECT u.Username, u.FullName, u.EmailAddress,
+                   ISNULL(p.PlanName, 'Free') as Subscription,
+                   u.DateJoined
+            FROM Users u
+            LEFT JOIN Subscription s ON u. Username = s.Username
+            LEFT JOIN [Plans] p ON s. PlanID = p.PlanID
+            WHERE u.UserType = 'PendingArtist' AND u.UserStatus = 'Active'
+              AND (u.Username LIKE ? OR u.FullName LIKE ?  OR u.EmailAddress LIKE ?)
+            ORDER BY u.DateJoined DESC
+        """
+        pattern = f"%{search_term}%"
+        return execute_query(query, (pattern, pattern, pattern))
 
-            if period == "day":
-                key = join_date
-            elif period == "month":
-                key = join_date[:7]
-            elif period == "year":
-                key = join_date[:4]
-            else:
-                key = join_date
+    def db_accept_artist_request(self, username):
+        query = "UPDATE Users SET UserType = 'Artist' WHERE Username = ?  AND UserType = 'PendingArtist'"
+        return execute_query(query, (username, ), commit=True) > 0
 
-            counts[key] = counts.get(key, 0) + 1
+    def db_reject_artist_request(self, username):
+        query = "UPDATE Users SET UserType = 'Listener' WHERE Username = ? AND UserType = 'PendingArtist'"
+        return execute_query(query, (username, ), commit=True) > 0
 
-        return [[k, v] for k, v in sorted(counts.items())]
+    def db_get_pending_songs(self):
+        query = """
+            SELECT sd.SongID, sd.SongName, sd.Username as ArtistName,
+                   ISNULL(STRING_AGG(g.GenreName, ', '), 'Unknown') as Genres,
+                   sd.ReleaseDate, sd.MetaData
+            FROM SongDetails sd
+            LEFT JOIN SongGenre sg ON sd.SongID = sg.SongID
+            LEFT JOIN Genre g ON sg.GenreID = g.GenreID
+            WHERE sd.SongStatus = 'Pending'
+            GROUP BY sd.SongID, sd.SongName, sd.Username, sd.ReleaseDate, sd.MetaData
+            ORDER BY sd.ReleaseDate DESC
+        """
+        return execute_query(query)
+
+    def db_search_pending_songs(self, search_term):
+        query = """
+            SELECT sd.SongID, sd. SongName, sd.Username as ArtistName,
+                   ISNULL(STRING_AGG(g.GenreName, ', '), 'Unknown') as Genres,
+                   sd. ReleaseDate, sd.MetaData
+            FROM SongDetails sd
+            LEFT JOIN SongGenre sg ON sd.SongID = sg.SongID
+            LEFT JOIN Genre g ON sg.GenreID = g.GenreID
+            WHERE sd.SongStatus = 'Pending'
+              AND (sd.SongName LIKE ? OR sd.Username LIKE ?)
+            GROUP BY sd.SongID, sd.SongName, sd.Username, sd.ReleaseDate, sd.MetaData
+            ORDER BY sd.ReleaseDate DESC
+        """
+        pattern = f"%{search_term}%"
+        return execute_query(query, (pattern, pattern))
+
+    def db_approve_song(self, song_id):
+        query = "UPDATE SongDetails SET SongStatus = 'Active' WHERE SongID = ?  AND SongStatus = 'Pending'"
+        return execute_query(query, (song_id, ), commit=True) > 0
+
+    def db_reject_song(self, song_id):
+        query = "UPDATE SongDetails SET SongStatus = 'Rejected' WHERE SongID = ?  AND SongStatus = 'Pending'"
+        return execute_query(query, (song_id, ), commit=True) > 0
+
+    def db_get_reported_songs(self):
+        query = """
+            SELECT sd.SongID, sd.SongName, sd.Username as ArtistName,
+                   r.Username as ReportedBy, r.ReportReason,
+                   ISNULL(STRING_AGG(g.GenreName, ', '), 'Unknown') as Genres,
+                   sd. Likes, sd.Dislikes,
+                   (SELECT COUNT(*) FROM Reports WHERE SongID = sd.SongID) as TotalReports,
+                   sd.ReleaseDate
+            FROM Reports r
+            JOIN SongDetails sd ON r.SongID = sd.SongID
+            LEFT JOIN SongGenre sg ON sd.SongID = sg.SongID
+            LEFT JOIN Genre g ON sg.GenreID = g.GenreID
+            WHERE sd.SongStatus = 'Active'
+            GROUP BY sd.SongID, sd.SongName, sd.Username, r.Username, r.ReportReason,
+                     sd.Likes, sd.Dislikes, sd.ReleaseDate
+            ORDER BY TotalReports DESC
+        """
+        return execute_query(query)
+
+    def db_search_reported_songs(self, search_term):
+        query = """
+            SELECT sd.SongID, sd.SongName, sd.Username as ArtistName,
+                   r.Username as ReportedBy, r.ReportReason,
+                   ISNULL(STRING_AGG(g. GenreName, ', '), 'Unknown') as Genres,
+                   sd.Likes, sd.Dislikes,
+                   (SELECT COUNT(*) FROM Reports WHERE SongID = sd.SongID) as TotalReports,
+                   sd.ReleaseDate
+            FROM Reports r
+            JOIN SongDetails sd ON r.SongID = sd.SongID
+            LEFT JOIN SongGenre sg ON sd.SongID = sg.SongID
+            LEFT JOIN Genre g ON sg. GenreID = g.GenreID
+            WHERE sd.SongStatus = 'Active'
+              AND (sd.SongName LIKE ? OR sd.Username LIKE ?)
+            GROUP BY sd. SongID, sd.SongName, sd.Username, r. Username, r.ReportReason,
+                     sd.Likes, sd.Dislikes, sd.ReleaseDate
+            ORDER BY TotalReports DESC
+        """
+        pattern = f"%{search_term}%"
+        return execute_query(query, (pattern, pattern))
+
+    def db_delete_reported_song(self, song_id):
+        execute_query("DELETE FROM Reports WHERE SongID = ?", (song_id, ),
+                      commit=True)
+        query = "UPDATE SongDetails SET SongStatus = 'Deleted' WHERE SongID = ?"
+        return execute_query(query, (song_id, ), commit=True) > 0
+
+    def db_get_all_genres(self):
+        query = "SELECT GenreID, GenreName FROM Genre ORDER BY GenreName"
+        return execute_query(query)
+
+    def db_add_genre(self, genre_name):
+        result = execute_query("SELECT ISNULL(MAX(GenreID), 0) + 1 FROM Genre",
+                               fetch_one=True)
+        new_id = result[0]
+        query = "INSERT INTO Genre (GenreID, GenreName) VALUES (?, ?)"
+        return execute_query(query, (new_id, genre_name), commit=True) > 0
+
+    def db_get_all_plans(self):
+        query = "SELECT PlanID, PlanName, PlanPrice FROM [Plans] ORDER BY PlanPrice"
+        return execute_query(query)
+
+    def db_add_plan(self, plan_name, plan_price):
+        result = execute_query(
+            "SELECT ISNULL(MAX(PlanID), 0) + 1 FROM [Plans]", fetch_one=True)
+        new_id = result[0]
+        query = "INSERT INTO [Plans] (PlanID, PlanName, PlanPrice) VALUES (?, ?, ?)"
+        return execute_query(query, (new_id, plan_name, plan_price),
+                             commit=True) > 0
+
+    def db_update_plan(self, plan_id, plan_name, plan_price):
+        query = "UPDATE [Plans] SET PlanName = ?, PlanPrice = ? WHERE PlanID = ?"
+        return execute_query(query, (plan_name, plan_price, plan_id),
+                             commit=True) > 0
+
+    def db_get_revenue_analytics(self, start_date, end_date, group_by='month'):
+        if group_by == 'day':
+            date_format = "CONVERT(varchar, PaymentDate, 23)"
+        elif group_by == 'month':
+            date_format = "FORMAT(PaymentDate, 'yyyy-MM')"
+        else:
+            date_format = "CAST(YEAR(PaymentDate) AS varchar)"
+
+        query = f"""
+            SELECT {date_format} as Period, SUM(Amount) as TotalRevenue
+            FROM BillingRecord
+            WHERE PaymentDate BETWEEN ?  AND ?
+            GROUP BY {date_format}
+            ORDER BY Period
+        """
+        results = execute_query(query, (start_date, end_date))
+        return [[str(row[0]), float(row[1])]
+                for row in results] if results else []
+
+    def db_get_plays_analytics(self, start_date, end_date, group_by='month'):
+        if group_by == 'day':
+            date_format = "CONVERT(varchar, PlayDate, 23)"
+        elif group_by == 'month':
+            date_format = "FORMAT(PlayDate, 'yyyy-MM')"
+        else:
+            date_format = "CAST(YEAR(PlayDate) AS varchar)"
+
+        query = f"""
+            SELECT {date_format} as Period, COUNT(*) as TotalPlays
+            FROM PlayHistory
+            WHERE PlayDate BETWEEN ?  AND ?
+            GROUP BY {date_format}
+            ORDER BY Period
+        """
+        results = execute_query(query, (start_date, end_date))
+        return [[str(row[0]), row[1]] for row in results] if results else []
+
+    def db_get_user_analytics(self, start_date, end_date, group_by='month'):
+        if group_by == 'day':
+            date_format = "CONVERT(varchar, DateJoined, 23)"
+        elif group_by == 'month':
+            date_format = "FORMAT(DateJoined, 'yyyy-MM')"
+        else:
+            date_format = "CAST(YEAR(DateJoined) AS varchar)"
+
+        query = f"""
+            SELECT {date_format} as Period, COUNT(*) as NewUsers
+            FROM Users
+            WHERE DateJoined BETWEEN ? AND ? 
+              AND UserStatus != 'Deleted'
+            GROUP BY {date_format}
+            ORDER BY Period
+        """
+        results = execute_query(query, (start_date, end_date))
+        return [[str(row[0]), row[1]] for row in results] if results else []
 
     # ==================== ANALYTICS HANDLERS ====================
 
     def handle_view_revenue(self):
-        start_date = self.qdate_to_string(self.window.ReveueStartDate.date())
-        end_date = self.qdate_to_string(self.window.ReveueEndDate.date())
+        try:
+            start_date = self.qdate_to_string(
+                self.window.ReveueStartDate.date())
+            end_date = self.qdate_to_string(self.window.ReveueEndDate.date())
 
-        if start_date > end_date:
-            QtWidgets.QMessageBox.warning(
-                self.window, "Invalid Date Range",
-                "Start date must be before or equal to end date.")
-            return
+            if start_date > end_date:
+                self.show_warning(
+                    "Start date must be before or equal to end date.")
+                return
 
-        period = self.get_selected_grouping(self.window.RevenueDay,
-                                            self.window.RevenueMonth,
-                                            self.window.RevenueYear)
+            period = self.get_selected_grouping(self.window.RevenueDay,
+                                                self.window.RevenueMonth,
+                                                self.window.RevenueYear)
 
-        data = self.get_analytics_data(RevenueData, start_date, end_date,
-                                       period)
+            data = self.db_get_revenue_analytics(start_date, end_date, period)
 
-        if not data:
-            QtWidgets.QMessageBox.information(
-                self.window, "No Data",
-                "No revenue data found for the selected date range.")
-            return
+            if not data:
+                self.show_warning(
+                    "No revenue data found for the selected date range.")
+                return
 
-        dialog = AnalyticsGraphDialog(
-            self.window,
-            f"Revenue Analysis (Grouped by {period. capitalize()})",
-            data,
-            period.capitalize() if period != "day" else "Date",
-            "Revenue ($)",
-            graph_type="line")
-        dialog.exec_()
+            dialog = AnalyticsGraphDialog(
+                self.window,
+                f"Revenue Analysis (Grouped by {period. capitalize()})",
+                data,
+                period.capitalize() if period != "day" else "Date",
+                "Revenue ($)",
+                graph_type="line")
+            dialog.exec_()
+
+        except Exception as e:
+            self.show_error(f"Failed to load revenue data:\n{str(e)}")
 
     def handle_view_plays(self):
-        start_date = self.qdate_to_string(self.window.PlaysStartDate.date())
-        end_date = self.qdate_to_string(self.window.PlaysEndDate.date())
+        try:
+            start_date = self.qdate_to_string(
+                self.window.PlaysStartDate.date())
+            end_date = self.qdate_to_string(self.window.PlaysEndDate.date())
 
-        if start_date > end_date:
-            QtWidgets.QMessageBox.warning(
-                self.window, "Invalid Date Range",
-                "Start date must be before or equal to end date.")
-            return
+            if start_date > end_date:
+                self.show_warning(
+                    "Start date must be before or equal to end date.")
+                return
 
-        period = self.get_selected_grouping(self.window.PlaysDay,
-                                            self.window.PlaysMonth,
-                                            self.window.PlaysYear)
+            period = self.get_selected_grouping(self.window.PlaysDay,
+                                                self.window.PlaysMonth,
+                                                self.window.PlaysYear)
 
-        data = self.get_analytics_data(PlaysData, start_date, end_date, period)
+            data = self.db_get_plays_analytics(start_date, end_date, period)
 
-        if not data:
-            QtWidgets.QMessageBox.information(
-                self.window, "No Data",
-                "No plays data found for the selected date range.")
-            return
+            if not data:
+                self.show_warning(
+                    "No plays data found for the selected date range.")
+                return
 
-        dialog = AnalyticsGraphDialog(
-            self.window,
-            f"Plays Analysis (Grouped by {period. capitalize()})",
-            data,
-            period.capitalize() if period != "day" else "Date",
-            "Total Plays",
-            graph_type="line")
-        dialog.exec_()
+            dialog = AnalyticsGraphDialog(
+                self.window,
+                f"Plays Analysis (Grouped by {period.capitalize()})",
+                data,
+                period.capitalize() if period != "day" else "Date",
+                "Total Plays",
+                graph_type="line")
+            dialog.exec_()
+
+        except Exception as e:
+            self.show_error(f"Failed to load plays data:\n{str(e)}")
 
     def handle_view_users(self):
-        start_date = self.qdate_to_string(self.window.UsersStartDate.date())
-        end_date = self.qdate_to_string(self.window.UsersEndDate.date())
+        try:
+            start_date = self.qdate_to_string(
+                self.window.UsersStartDate.date())
+            end_date = self.qdate_to_string(self.window.UsersEndDate.date())
 
-        if start_date > end_date:
-            QtWidgets.QMessageBox.warning(
-                self.window, "Invalid Date Range",
-                "Start date must be before or equal to end date.")
-            return
+            if start_date > end_date:
+                self.show_warning(
+                    "Start date must be before or equal to end date.")
+                return
 
-        period = self.get_selected_grouping(self.window.UsersDay,
-                                            self.window.UsersMonth,
-                                            self.window.UsersYear)
+            period = self.get_selected_grouping(self.window.UsersDay,
+                                                self.window.UsersMonth,
+                                                self.window.UsersYear)
 
-        data = self.get_user_count_data(start_date, end_date, period)
+            data = self.db_get_user_analytics(start_date, end_date, period)
 
-        if not data:
-            QtWidgets.QMessageBox.information(
-                self.window, "No Data",
-                "No users joined during the selected date range.")
-            return
+            if not data:
+                self.show_warning(
+                    "No users joined during the selected date range.")
+                return
 
-        dialog = AnalyticsGraphDialog(
-            self.window,
-            f"New Users Analysis (Grouped by {period.capitalize()})",
-            data,
-            period.capitalize() if period != "day" else "Date",
-            "New Users",
-            graph_type="bar")
-        dialog.exec_()
+            dialog = AnalyticsGraphDialog(
+                self.window,
+                f"New Users Analysis (Grouped by {period.capitalize()})",
+                data,
+                period.capitalize() if period != "day" else "Date",
+                "New Users",
+                graph_type="bar")
+            dialog.exec_()
+
+        except Exception as e:
+            self.show_error(f"Failed to load user data:\n{str(e)}")
 
     # ==================== ARTIST REQUESTS ====================
 
-    def load_artist_requests_table(self, data_source=None):
-        requests = data_source if data_source is not None else get_pending_requests(
-        )
-        table = self.window.artistsRequestTable
-        table.setRowCount(len(requests))
+    def load_artist_requests_table(self, data=None):
+        try:
+            requests = data if data is not None else self.db_get_pending_artist_requests(
+            )
+            table = self.window.artistsRequestTable
+            table.setRowCount(len(requests) if requests else 0)
 
-        for row, (username, data) in enumerate(requests.items()):
-            table.setItem(row, 0, QtWidgets.QTableWidgetItem(str(row + 1)))
-            table.setItem(row, 1, QtWidgets.QTableWidgetItem(username))
-            table.setItem(row, 2, QtWidgets.QTableWidgetItem(data[0]))
-            table.setItem(row, 3, QtWidgets.QTableWidgetItem(data[1]))
-            table.setItem(row, 4, QtWidgets.QTableWidgetItem(data[2]))
+            if requests:
+                for row, request in enumerate(requests):
+                    table.setItem(row, 0,
+                                  QtWidgets.QTableWidgetItem(str(row + 1)))
+                    table.setItem(
+                        row, 1,
+                        QtWidgets.QTableWidgetItem(str(request[0] or '')))
+                    table.setItem(
+                        row, 2,
+                        QtWidgets.QTableWidgetItem(str(request[1] or '')))
+                    table.setItem(
+                        row, 3,
+                        QtWidgets.QTableWidgetItem(str(request[2] or '')))
+                    table.setItem(
+                        row, 4,
+                        QtWidgets.QTableWidgetItem(str(request[3] or '')))
 
-        table.resizeColumnsToContents()
+            table.resizeColumnsToContents()
+
+        except Exception as e:
+            self.show_error(f"Failed to load artist requests:\n{str(e)}")
 
     def populate_artist_request_form(self, row, column):
-        table = self.window.artistsRequestTable
-        username = table.item(row, 1).text()
-        request_data = get_pending_requests().get(username)
+        try:
+            table = self.window.artistsRequestTable
+            username = table.item(row, 1).text()
 
-        if request_data:
-            self.window.UsernameLineEdit_2.setText(username)
-            self.window.FullNameLineEdit_2.setText(request_data[0])
-            self.window.EmailLineEdit_2.setText(request_data[1])
-            self.window.SubscriptionLineEdit_2.setText(request_data[2])
-            self.window.dateJoined_2.setDate(
-                self.string_to_qdate(request_data[3]))
+            requests = self.db_get_pending_artist_requests()
+            request_data = next((r for r in requests if r[0] == username),
+                                None)
+
+            if request_data:
+                self.window.UsernameLineEdit_2.setText(
+                    str(request_data[0] or ''))
+                self.window.FullNameLineEdit_2.setText(
+                    str(request_data[1] or ''))
+                self.window.EmailLineEdit_2.setText(str(request_data[2] or ''))
+                self.window.SubscriptionLineEdit_2.setText(
+                    str(request_data[3] or ''))
+                if request_data[4]:
+                    self.window.dateJoined_2.setDate(
+                        self.string_to_qdate(request_data[4]))
+
+        except Exception as e:
+            self.show_error(f"Failed to load request details:\n{str(e)}")
 
     def clear_artist_request_form(self):
         self.window.UsernameLineEdit_2.clear()
@@ -369,85 +639,97 @@ class AdminDashboardHandler:
     def handle_accept_artist_request(self):
         username = self.window.UsernameLineEdit_2.text()
         if not username:
-            QtWidgets.QMessageBox.warning(
-                self.window, "No User Selected",
+            self.show_warning(
                 "Please select an artist request from the table.")
             return
 
-        if accept_artist_request(username):
-            QtWidgets.QMessageBox.information(
-                self.window, "Success",
-                f"Artist request for '{username}' has been accepted.")
-            self.load_artist_requests_table()
-            self.clear_artist_request_form()
-        else:
-            QtWidgets.QMessageBox.critical(
-                self.window, "Error",
-                f"Could not accept request for '{username}'.")
+        try:
+            if self.db_accept_artist_request(username):
+                self.show_success(
+                    f"Artist request for '{username}' has been accepted.")
+                self.load_artist_requests_table()
+                self.clear_artist_request_form()
+            else:
+                self.show_error(f"Could not accept request for '{username}'.")
+        except Exception as e:
+            self.show_error(f"Database error:\n{str(e)}")
 
     def handle_reject_artist_request(self):
         username = self.window.UsernameLineEdit_2.text()
         if not username:
-            QtWidgets.QMessageBox.warning(
-                self.window, "No User Selected",
+            self.show_warning(
                 "Please select an artist request from the table.")
             return
 
-        if reject_artist_request(username):
-            QtWidgets.QMessageBox.information(
-                self.window, "Success",
-                f"Artist request for '{username}' has been rejected.")
-            self.load_artist_requests_table()
-            self.clear_artist_request_form()
-        else:
-            QtWidgets.QMessageBox.critical(
-                self.window, "Error",
-                f"Could not reject request for '{username}'.")
+        try:
+            if self.db_reject_artist_request(username):
+                self.show_success(
+                    f"Artist request for '{username}' has been rejected.")
+                self.load_artist_requests_table()
+                self.clear_artist_request_form()
+            else:
+                self.show_error(f"Could not reject request for '{username}'.")
+        except Exception as e:
+            self.show_error(f"Database error:\n{str(e)}")
 
     def handle_search_artist_requests(self):
-        search_term = self.window.pendingArtistSearch.text().lower()
+        search_term = self.window.pendingArtistSearch.text().strip()
 
-        if not search_term:
-            self.load_artist_requests_table()
-            return
-
-        all_requests = get_pending_requests()
-        filtered = {
-            u: d
-            for u, d in all_requests.items()
-            if search_term in u.lower() or search_term in d[0].lower()
-        }
-        self.load_artist_requests_table(filtered)
+        try:
+            if not search_term:
+                self.load_artist_requests_table()
+            else:
+                results = self.db_search_artist_requests(search_term)
+                self.load_artist_requests_table(results)
+        except Exception as e:
+            self.show_error(f"Search failed:\n{str(e)}")
 
     # ==================== USERS MANAGEMENT ====================
 
-    def load_users_table(self, data_source=None):
-        users = data_source if data_source is not None else get_all_users()
-        table = self.window.tableWidget
-        table.setRowCount(len(users))
+    def load_users_table(self, data=None):
+        try:
+            users = data if data is not None else self.db_get_all_users()
+            table = self.window.tableWidget
+            table.setRowCount(len(users) if users else 0)
 
-        for row, (username, data) in enumerate(users.items()):
-            table.setItem(row, 0, QtWidgets.QTableWidgetItem(username))
-            table.setItem(row, 1, QtWidgets.QTableWidgetItem(data[0]))
-            table.setItem(row, 2, QtWidgets.QTableWidgetItem(data[2]))
-            table.setItem(row, 3, QtWidgets.QTableWidgetItem(data[7]))
-            table.setItem(row, 4, QtWidgets.QTableWidgetItem(data[4]))
+            if users:
+                for row, user in enumerate(users):
+                    table.setItem(
+                        row, 0, QtWidgets.QTableWidgetItem(str(user[0] or '')))
+                    table.setItem(
+                        row, 1, QtWidgets.QTableWidgetItem(str(user[6] or '')))
+                    table.setItem(
+                        row, 2, QtWidgets.QTableWidgetItem(str(user[3] or '')))
+                    table.setItem(
+                        row, 3,
+                        QtWidgets.QTableWidgetItem(
+                            str(user[7]) if user[7] else ''))
+                    table.setItem(
+                        row, 4, QtWidgets.QTableWidgetItem(str(user[2] or '')))
 
-        table.resizeColumnsToContents()
+            table.resizeColumnsToContents()
+
+        except Exception as e:
+            self.show_error(f"Failed to load users:\n{str(e)}")
 
     def populate_user_form(self, row, column):
-        table = self.window.tableWidget
-        username = table.item(row, 0).text()
-        user_data = get_user(username)
+        try:
+            table = self.window.tableWidget
+            username = table.item(row, 0).text()
+            user_data = self.db_get_user(username)
 
-        if user_data:
-            self.window.UsernameLineEdit.setText(username)
-            self.window.FullNameLineEdit.setText(user_data[0])
-            self.window.EmailLineEdit.setText(user_data[2])
-            self.window.dateJoined.setDate(self.string_to_qdate(user_data[7]))
-            self.window.UserTypeLineEdit.setText(user_data[4])
-            self.window.SubscriptionLineEdit.setText(user_data[5])
-            self.window.RevenueLineEdit.setText(str(user_data[6]))
+            if user_data:
+                self.window.UsernameLineEdit.setText(str(user_data[0] or ''))
+                self.window.FullNameLineEdit.setText(str(user_data[6] or ''))
+                self.window.EmailLineEdit.setText(str(user_data[3] or ''))
+                self.window.UserTypeLineEdit.setText(str(user_data[2] or ''))
+
+                if user_data[7]:
+                    self.window.dateJoined.setDate(
+                        self.string_to_qdate(user_data[7]))
+
+        except Exception as e:
+            self.show_error(f"Failed to load user details:\n{str(e)}")
 
     def clear_user_form(self):
         self.window.UsernameLineEdit.clear()
@@ -455,15 +737,15 @@ class AdminDashboardHandler:
         self.window.EmailLineEdit.clear()
         self.window.dateJoined.setDate(QtCore.QDate.currentDate())
         self.window.UserTypeLineEdit.clear()
-        self.window.SubscriptionLineEdit.clear()
-        self.window.RevenueLineEdit.clear()
+        if hasattr(self.window, 'SubscriptionLineEdit'):
+            self.window.SubscriptionLineEdit.clear()
+        if hasattr(self.window, 'RevenueLineEdit'):
+            self.window.RevenueLineEdit.clear()
 
     def handle_delete_user(self):
         username = self.window.UsernameLineEdit.text()
         if not username:
-            QtWidgets.QMessageBox.warning(
-                self.window, "No User Selected",
-                "Please select a user from the table to delete.")
+            self.show_warning("Please select a user from the table to delete.")
             return
 
         reply = QtWidgets.QMessageBox.question(
@@ -472,65 +754,75 @@ class AdminDashboardHandler:
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
 
         if reply == QtWidgets.QMessageBox.Yes:
-            if remove_user(username):
-                QtWidgets.QMessageBox.information(
-                    self.window, "Success",
-                    f"User '{username}' has been deleted.")
-                self.load_users_table()
-                self.clear_user_form()
-            else:
-                QtWidgets.QMessageBox.critical(
-                    self.window, "Error",
-                    f"Could not delete user '{username}'.")
+            try:
+                if self.db_delete_user(username):
+                    self.show_success(f"User '{username}' has been deleted.")
+                    self.load_users_table()
+                    self.clear_user_form()
+                else:
+                    self.show_error(f"Could not delete user '{username}'.")
+            except Exception as e:
+                self.show_error(f"Database error:\n{str(e)}")
 
     def handle_search_users(self):
-        search_term = self.window.searchUserInput.text().lower()
+        search_term = self.window.searchUserInput.text().strip()
 
-        if not search_term:
-            self.load_users_table()
-            return
-
-        all_users = get_all_users()
-        filtered = {
-            u: d
-            for u, d in all_users.items()
-            if search_term in u.lower() or search_term in d[0].lower()
-        }
-        self.load_users_table(filtered)
+        try:
+            if not search_term:
+                self.load_users_table()
+            else:
+                results = self.db_search_users(search_term)
+                self.load_users_table(results)
+        except Exception as e:
+            self.show_error(f"Search failed:\n{str(e)}")
 
     # ==================== PENDING SONGS ====================
 
-    def load_pending_songs_table(self, data_source=None):
-        songs = data_source if data_source is not None else get_pending_songs()
-        table = self.window.pendingSongsTable
-        table.setRowCount(len(songs))
+    def load_pending_songs_table(self, data=None):
+        try:
+            songs = data if data is not None else self.db_get_pending_songs()
+            table = self.window.pendingSongsTable
+            table.setRowCount(len(songs) if songs else 0)
 
-        for row, (song_id, data) in enumerate(songs.items()):
-            table.setItem(row, 0, QtWidgets.QTableWidgetItem(song_id))
-            table.setItem(row, 1, QtWidgets.QTableWidgetItem(data[0]))
-            table.setItem(row, 2, QtWidgets.QTableWidgetItem(data[1]))
-            table.setItem(row, 3, QtWidgets.QTableWidgetItem(data[2]))
-            table.setItem(row, 4, QtWidgets.QTableWidgetItem(data[3]))
+            if songs:
+                for row, song in enumerate(songs):
+                    table.setItem(
+                        row, 0, QtWidgets.QTableWidgetItem(str(song[0] or '')))
+                    table.setItem(
+                        row, 1, QtWidgets.QTableWidgetItem(str(song[1] or '')))
+                    table.setItem(
+                        row, 2, QtWidgets.QTableWidgetItem(str(song[2] or '')))
+                    table.setItem(
+                        row, 3, QtWidgets.QTableWidgetItem(str(song[3] or '')))
+                    table.setItem(
+                        row, 4,
+                        QtWidgets.QTableWidgetItem(
+                            str(song[4]) if song[4] else ''))
 
-        table.resizeColumnsToContents()
+            table.resizeColumnsToContents()
+
+        except Exception as e:
+            self.show_error(f"Failed to load pending songs:\n{str(e)}")
 
     def populate_pending_song_form(self, row, column):
-        table = self.window.pendingSongsTable
-        song_id = table.item(row, 0).text()
-        song_data = get_pending_songs().get(song_id)
+        try:
+            table = self.window.pendingSongsTable
 
-        if song_data:
-            self.window.PendingsongID.setText(song_id)
-            self.window.PendingSongName.setText(song_data[0])
-            self.window.ArtistName.setText(song_data[1])
-            self.window.genreLineEdit.setText(song_data[2])
-            self.window.submissionDate.setDate(
-                self.string_to_qdate(song_data[3]))
+            self.window.PendingsongID.setText(table.item(row, 0).text())
+            self.window.PendingSongName.setText(table.item(row, 1).text())
+            self.window.ArtistName.setText(table.item(row, 2).text())
+            self.window.genreLineEdit.setText(table.item(row, 3).text())
 
-            pixmap = QtGui.QPixmap(song_data[5])
-            if pixmap.isNull():
-                pixmap = QtGui.QPixmap("Song_images/default_song_image.jpg")
-            self.window.songImage.setPixmap(pixmap)
+            date_str = table.item(row, 4).text()
+            if date_str:
+                self.window.submissionDate.setDate(
+                    self.string_to_qdate(date_str))
+
+            self.window.songImage.setPixmap(
+                QtGui.QPixmap("Song_images/default_song_image.jpg"))
+
+        except Exception as e:
+            self.show_error(f"Failed to load song details:\n{str(e)}")
 
     def clear_pending_song_form(self):
         self.window.PendingsongID.clear()
@@ -544,98 +836,117 @@ class AdminDashboardHandler:
     def handle_view_song(self):
         song_id = self.window.PendingsongID.text()
         if not song_id:
-            QtWidgets.QMessageBox.warning(
-                self.window, "No Song Selected",
-                "Please select a song from the table.")
+            self.show_warning("Please select a song from the table.")
             return
 
-        song_data = get_pending_songs().get(song_id)
-        if song_data:
-            QtWidgets.QMessageBox.information(
-                self.window, "Playing Song",
-                f"Simulating playback of:  {song_data[0]}\n(from {song_data[4]})"
-            )
+        song_name = self.window.PendingSongName.text()
+        QtWidgets.QMessageBox.information(
+            self.window, "Playing Song",
+            f"Simulating playback of:  {song_name}")
 
     def handle_approve_song(self):
         song_id = self.window.PendingsongID.text()
         if not song_id:
-            QtWidgets.QMessageBox.warning(self.window, "No Song Selected",
-                                          "Please select a song to approve.")
+            self.show_warning("Please select a song to approve.")
             return
 
-        if approve_song(song_id):
-            QtWidgets.QMessageBox.information(self.window, "Success",
-                                              "Song has been approved.")
-            self.load_pending_songs_table()
-            self.clear_pending_song_form()
-        else:
-            QtWidgets.QMessageBox.critical(
-                self.window, "Error", f"Could not approve song '{song_id}'.")
+        try:
+            if self.db_approve_song(int(song_id)):
+                self.show_success("Song has been approved.")
+                self.load_pending_songs_table()
+                self.clear_pending_song_form()
+            else:
+                self.show_error(f"Could not approve song '{song_id}'.")
+        except Exception as e:
+            self.show_error(f"Database error:\n{str(e)}")
 
     def handle_reject_song(self):
         song_id = self.window.PendingsongID.text()
         if not song_id:
-            QtWidgets.QMessageBox.warning(self.window, "No Song Selected",
-                                          "Please select a song to reject.")
+            self.show_warning("Please select a song to reject.")
             return
 
-        if reject_song(song_id):
-            QtWidgets.QMessageBox.information(self.window, "Success",
-                                              "Song has been rejected.")
-            self.load_pending_songs_table()
-            self.clear_pending_song_form()
-        else:
-            QtWidgets.QMessageBox.critical(
-                self.window, "Error", f"Could not reject song '{song_id}'.")
+        try:
+            if self.db_reject_song(int(song_id)):
+                self.show_success("Song has been rejected.")
+                self.load_pending_songs_table()
+                self.clear_pending_song_form()
+            else:
+                self.show_error(f"Could not reject song '{song_id}'.")
+        except Exception as e:
+            self.show_error(f"Database error:\n{str(e)}")
 
     def handle_search_pending_songs(self):
-        search_term = self.window.pendingSongSearch.text().lower()
+        search_term = self.window.pendingSongSearch.text().strip()
 
-        if not search_term:
-            self.load_pending_songs_table()
-            return
-
-        all_songs = get_pending_songs()
-        filtered = {
-            sid: d
-            for sid, d in all_songs.items()
-            if search_term in d[0].lower() or search_term in d[1].lower()
-        }
-        self.load_pending_songs_table(filtered)
+        try:
+            if not search_term:
+                self.load_pending_songs_table()
+            else:
+                results = self.db_search_pending_songs(search_term)
+                self.load_pending_songs_table(results)
+        except Exception as e:
+            self.show_error(f"Search failed:\n{str(e)}")
 
     # ==================== REPORTED SONGS ====================
 
-    def load_reported_songs_table(self, data_source=None):
-        reports = data_source if data_source is not None else get_reported_songs(
-        )
-        table = self.window.reportedSongsTable
-        table.setRowCount(len(reports))
+    def load_reported_songs_table(self, data=None):
+        try:
+            reports = data if data is not None else self.db_get_reported_songs(
+            )
+            table = self.window.reportedSongsTable
+            table.setRowCount(len(reports) if reports else 0)
 
-        for row, (report_id, data) in enumerate(reports.items()):
-            table.setItem(row, 0, QtWidgets.QTableWidgetItem(report_id))
-            table.setItem(row, 1, QtWidgets.QTableWidgetItem(data[1]))
-            table.setItem(row, 2, QtWidgets.QTableWidgetItem(data[2]))
-            table.setItem(row, 3, QtWidgets.QTableWidgetItem(data[3]))
-            table.setItem(row, 4, QtWidgets.QTableWidgetItem(data[4]))
+            if reports:
+                for row, report in enumerate(reports):
+                    table.setItem(
+                        row, 0, QtWidgets.QTableWidgetItem(str(report[0]
+                                                               or '')))
+                    table.setItem(
+                        row, 1, QtWidgets.QTableWidgetItem(str(report[1]
+                                                               or '')))
+                    table.setItem(
+                        row, 2, QtWidgets.QTableWidgetItem(str(report[2]
+                                                               or '')))
+                    table.setItem(
+                        row, 3, QtWidgets.QTableWidgetItem(str(report[3]
+                                                               or '')))
+                    table.setItem(
+                        row, 4, QtWidgets.QTableWidgetItem(str(report[4]
+                                                               or '')))
 
-        table.resizeColumnsToContents()
-        table.horizontalHeader().setStretchLastSection(True)
+            table.resizeColumnsToContents()
+            table.horizontalHeader().setStretchLastSection(True)
+
+        except Exception as e:
+            self.show_error(f"Failed to load reported songs:\n{str(e)}")
 
     def populate_reported_song_form(self, row, column):
-        table = self.window.reportedSongsTable
-        report_id = table.item(row, 0).text()
-        report_data = get_reported_songs().get(report_id)
+        try:
+            table = self.window.reportedSongsTable
+            song_id = table.item(row, 0).text()
 
-        if report_data:
-            self.window.Reports_SongID.setText(report_data[0])
-            self.window.Reports_SongName.setText(report_data[1])
-            self.window.Reports_ArtistName.setText(report_data[2])
-            self.window.Reports_Genre.setText(report_data[5])
-            self.window.Reports_Likes.setText(str(report_data[6]))
-            self.window.Reports_Dislikes.setText(str(report_data[7]))
-            self.window.Reports_Dislikes_2.setText(str(report_data[8]))
-            self.window.Reports_UploadDate.setDate(
-                self.string_to_qdate(report_data[9]))
+            reports = self.db_get_reported_songs()
+            report_data = next((r for r in reports if str(r[0]) == song_id),
+                               None)
+
+            if report_data:
+                self.window.Reports_SongID.setText(str(report_data[0] or ''))
+                self.window.Reports_SongName.setText(str(report_data[1] or ''))
+                self.window.Reports_ArtistName.setText(
+                    str(report_data[2] or ''))
+                self.window.Reports_Genre.setText(str(report_data[5] or ''))
+                self.window.Reports_Likes.setText(str(report_data[6] or 0))
+                self.window.Reports_Dislikes.setText(str(report_data[7] or 0))
+                self.window.Reports_Dislikes_2.setText(str(report_data[8]
+                                                           or 0))
+
+                if report_data[9]:
+                    self.window.Reports_UploadDate.setDate(
+                        self.string_to_qdate(report_data[9]))
+
+        except Exception as e:
+            self.show_error(f"Failed to load report details:\n{str(e)}")
 
     def clear_reported_song_form(self):
         self.window.Reports_SongID.clear()
@@ -650,9 +961,7 @@ class AdminDashboardHandler:
     def handle_delete_reported_song(self):
         song_id = self.window.Reports_SongID.text()
         if not song_id:
-            QtWidgets.QMessageBox.warning(
-                self.window, "No Song Selected",
-                "Please select a reported song to delete.")
+            self.show_warning("Please select a reported song to delete.")
             return
 
         reply = QtWidgets.QMessageBox.question(
@@ -661,156 +970,160 @@ class AdminDashboardHandler:
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
 
         if reply == QtWidgets.QMessageBox.Yes:
-            if delete_reported_song(song_id):
-                QtWidgets.QMessageBox.information(
-                    self.window, "Success",
-                    f"Song '{song_id}' has been deleted.")
-                self.load_reported_songs_table()
-                self.clear_reported_song_form()
-            else:
-                QtWidgets.QMessageBox.critical(
-                    self.window, "Error",
-                    f"Could not delete song '{song_id}'.")
+            try:
+                if self.db_delete_reported_song(int(song_id)):
+                    self.show_success(f"Song '{song_id}' has been deleted.")
+                    self.load_reported_songs_table()
+                    self.clear_reported_song_form()
+                else:
+                    self.show_error(f"Could not delete song '{song_id}'.")
+            except Exception as e:
+                self.show_error(f"Database error:\n{str(e)}")
 
     def handle_search_reports(self):
-        search_term = self.window.searchReportInput.text().lower()
+        search_term = self.window.searchReportInput.text().strip()
 
-        if not search_term:
-            self.load_reported_songs_table()
-            return
-
-        all_reports = get_reported_songs()
-        filtered = {
-            rid: d
-            for rid, d in all_reports.items()
-            if search_term in d[1].lower() or search_term in d[2].lower()
-        }
-        self.load_reported_songs_table(filtered)
+        try:
+            if not search_term:
+                self.load_reported_songs_table()
+            else:
+                results = self.db_search_reported_songs(search_term)
+                self.load_reported_songs_table(results)
+        except Exception as e:
+            self.show_error(f"Search failed:\n{str(e)}")
 
     # ==================== SUBSCRIPTION PLANS ====================
 
     def load_subscription_plans_table(self):
-        plans = get_subscription_plans()
-        table = self.window.tableWidget_2
-        table.setRowCount(len(plans))
+        try:
+            plans = self.db_get_all_plans()
+            table = self.window.tableWidget_2
+            table.setRowCount(len(plans) if plans else 0)
 
-        for row, (plan_id, data) in enumerate(plans.items()):
-            table.setItem(row, 0, QtWidgets.QTableWidgetItem(plan_id))
-            table.setItem(row, 1, QtWidgets.QTableWidgetItem(data[0]))
-            table.setItem(row, 2, QtWidgets.QTableWidgetItem(str(data[1])))
-            table.setItem(row, 3, QtWidgets.QTableWidgetItem(data[2]))
-            table.setItem(row, 4, QtWidgets.QTableWidgetItem(data[3]))
+            if plans:
+                for row, plan in enumerate(plans):
+                    table.setItem(
+                        row, 0, QtWidgets.QTableWidgetItem(str(plan[0] or '')))
+                    table.setItem(
+                        row, 1, QtWidgets.QTableWidgetItem(str(plan[1] or '')))
+                    table.setItem(
+                        row, 2, QtWidgets.QTableWidgetItem(str(plan[2] or '')))
 
-        table.resizeColumnsToContents()
+            table.resizeColumnsToContents()
+
+        except Exception as e:
+            self.show_error(f"Failed to load plans:\n{str(e)}")
 
     def populate_subscription_plan_form(self, row, column):
-        table = self.window.tableWidget_2
-        self.window.current_plan_id = table.item(row, 0).text()
-        plan_data = get_subscription_plans().get(self.window.current_plan_id)
+        try:
+            table = self.window.tableWidget_2
 
-        if plan_data:
-            self.window.PlanName.setText(plan_data[0])
-            self.window.PlanPrice.setText(str(plan_data[1]))
-            self.window.PlanDuration.setText(plan_data[2])
-            self.window.PlanFeatures.setText(plan_data[3])
+            self.window.current_plan_id = table.item(row, 0).text()
+            self.window.PlanName.setText(table.item(row, 1).text())
+            self.window.PlanPrice.setText(table.item(row, 2).text())
+
+        except Exception as e:
+            self.show_error(f"Failed to load plan details:\n{str(e)}")
 
     def clear_subscription_plan_form(self):
         self.window.PlanName.clear()
         self.window.PlanPrice.clear()
-        self.window.PlanDuration.clear()
-        self.window.PlanFeatures.clear()
+        if hasattr(self.window, 'PlanDuration'):
+            self.window.PlanDuration.clear()
+        if hasattr(self.window, 'PlanFeatures'):
+            self.window.PlanFeatures.clear()
         if hasattr(self.window, "current_plan_id"):
             del self.window.current_plan_id
 
     def handle_add_subscription_plan(self):
-        plan_id = f"SP{len(get_subscription_plans()) + 1: 03d}"
-        plan_name = self.window.PlanName.text()
+        plan_name = self.window.PlanName.text().strip()
 
         try:
             plan_price = float(self.window.PlanPrice.text())
         except ValueError:
-            QtWidgets.QMessageBox.warning(self.window, "Invalid Input",
-                                          "Price must be a valid number.")
+            self.show_warning("Price must be a valid number.")
             return
 
-        plan_duration = self.window.PlanDuration.text()
-        plan_features = self.window.PlanFeatures.text()
-
-        if not all([plan_name, plan_duration, plan_features]):
-            QtWidgets.QMessageBox.warning(self.window, "Missing Information",
-                                          "Please fill out all plan fields.")
+        if not plan_name:
+            self.show_warning("Please enter a plan name.")
             return
 
-        add_subscription_plan(
-            plan_id, [plan_name, plan_price, plan_duration, plan_features])
-        QtWidgets.QMessageBox.information(self.window, "Success",
-                                          f"New plan '{plan_name}' added.")
-        self.load_subscription_plans_table()
-        self.clear_subscription_plan_form()
+        try:
+            if self.db_add_plan(plan_name, plan_price):
+                self.show_success(f"New plan '{plan_name}' added.")
+                self.load_subscription_plans_table()
+                self.clear_subscription_plan_form()
+            else:
+                self.show_error("Could not add plan.")
+        except Exception as e:
+            self.show_error(f"Database error:\n{str(e)}")
 
     def handle_update_subscription_plan(self):
         if not hasattr(self.window, "current_plan_id"):
-            QtWidgets.QMessageBox.warning(self.window, "No Plan Selected",
-                                          "Please select a plan to update.")
+            self.show_warning("Please select a plan to update.")
             return
 
-        plan_id = self.window.current_plan_id
-        plan_name = self.window.PlanName.text()
+        plan_id = int(self.window.current_plan_id)
+        plan_name = self.window.PlanName.text().strip()
 
         try:
             plan_price = float(self.window.PlanPrice.text())
         except ValueError:
-            QtWidgets.QMessageBox.warning(self.window, "Invalid Input",
-                                          "Price must be a valid number.")
+            self.show_warning("Price must be a valid number.")
             return
 
-        plan_duration = self.window.PlanDuration.text()
-        plan_features = self.window.PlanFeatures.text()
-
-        if not all([plan_name, plan_duration, plan_features]):
-            QtWidgets.QMessageBox.warning(self.window, "Missing Information",
-                                          "Please fill out all plan fields.")
+        if not plan_name:
+            self.show_warning("Please enter a plan name.")
             return
 
-        if update_subscription_plan(
-                plan_id,
-            [plan_name, plan_price, plan_duration, plan_features]):
-            QtWidgets.QMessageBox.information(self.window, "Success",
-                                              f"Plan '{plan_name}' updated.")
-            self.load_subscription_plans_table()
-            self.clear_subscription_plan_form()
-        else:
-            QtWidgets.QMessageBox.critical(
-                self.window, "Error", f"Could not update plan '{plan_id}'.")
+        try:
+            if self.db_update_plan(plan_id, plan_name, plan_price):
+                self.show_success(f"Plans '{plan_name}' updated.")
+                self.load_subscription_plans_table()
+                self.clear_subscription_plan_form()
+            else:
+                self.show_error("Could not update plan.")
+        except Exception as e:
+            self.show_error(f"Database error:\n{str(e)}")
 
     # ==================== GENRES ====================
 
     def load_genre_table(self):
-        genres = get_all_genres()
-        table = self.window.tableWidget_3
-        table.setRowCount(len(genres))
+        try:
+            genres = self.db_get_all_genres()
+            table = self.window.tableWidget_3
+            table.setRowCount(len(genres) if genres else 0)
 
-        for row, (genre_id, data) in enumerate(genres.items()):
-            table.setItem(row, 0, QtWidgets.QTableWidgetItem(genre_id))
-            table.setItem(row, 1, QtWidgets.QTableWidgetItem(data[0]))
-            table.setItem(row, 2, QtWidgets.QTableWidgetItem(data[1]))
+            if genres:
+                for row, genre in enumerate(genres):
+                    table.setItem(
+                        row, 0, QtWidgets.QTableWidgetItem(str(genre[0]
+                                                               or '')))
+                    table.setItem(
+                        row, 1, QtWidgets.QTableWidgetItem(str(genre[1]
+                                                               or '')))
 
-        table.resizeColumnsToContents()
-        table.horizontalHeader().setStretchLastSection(True)
+            table.resizeColumnsToContents()
+            table.horizontalHeader().setStretchLastSection(True)
+
+        except Exception as e:
+            self.show_error(f"Failed to load genres:\n{str(e)}")
 
     def handle_add_genre(self):
-        genre_id = f"GN{len(get_all_genres()) + 1:03d}"
-        genre_name = self.window.genreNameLineEdit.text()
-        description = self.window.genreDescriptionLineEdit.text()
+        genre_name = self.window.genreNameLineEdit.text().strip()
 
-        if not genre_name or not description:
-            QtWidgets.QMessageBox.warning(self.window, "Missing Information",
-                                          "Please fill out all genre fields.")
+        if not genre_name:
+            self.show_warning("Please enter a genre name.")
             return
 
-        add_genre(genre_id, [genre_name, description])
-        QtWidgets.QMessageBox.information(self.window, "Success",
-                                          f"New genre '{genre_name}' added.")
-        self.load_genre_table()
-        self.window.genreNameLineEdit.clear()
-        self.window.genreDescriptionLineEdit.clear()
+        try:
+            if self.db_add_genre(genre_name):
+                self.show_success(f"New genre '{genre_name}' added.")
+                self.load_genre_table()
+                self.window.genreNameLineEdit.clear()
+                if hasattr(self.window, 'genreDescriptionLineEdit'):
+                    self.window.genreDescriptionLineEdit.clear()
+            else:
+                self.show_error("Could not add genre.")
+        except Exception as e:
+            self.show_error(f"Database error:\n{str(e)}")

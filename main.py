@@ -1,10 +1,110 @@
 import sys
 import re
+import pyodbc
 from PyQt5 import QtWidgets, uic
-from data import *
+from datetime import datetime
 from admin_functions import AdminDashboardHandler
 from user_functions import UserDashboardHandler
 from music_player import MusicPlayer
+
+# ==================== DATABASE CONNECTION ====================
+
+server = 'SAROSH-PC\SQLSERVERSEM3'
+database = 'HabibifyDatabase'
+use_windows_authentication = True
+username = 'your_username'
+password = 'your_password'
+
+
+def get_connection():
+    if use_windows_authentication:
+        connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};Trusted_Connection=yes;'
+    else:
+        connection_string = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}'
+
+    return pyodbc.connect(connection_string)
+
+
+def execute_query(query,
+                  params=None,
+                  fetch_one=False,
+                  fetch_all=True,
+                  commit=False):
+    connection = None
+    cursor = None
+    try:
+        connection = get_connection()
+        cursor = connection.cursor()
+
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+
+        if commit:
+            connection.commit()
+            return cursor.rowcount
+        elif fetch_one:
+            return cursor.fetchone()
+        elif fetch_all:
+            return cursor.fetchall()
+        else:
+            return None
+
+    except pyodbc.Error as e:
+        print(f"Database error:  {e}")
+        if connection:
+            connection.rollback()
+        raise
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+
+def db_authenticate_user(username, password):
+    query = """
+        SELECT Username, Password, UserType, EmailAddress, UserStatus, 
+               PhoneNo, FullName, DateJoined
+        FROM Users 
+        WHERE Username = ? AND Password = ?  AND UserStatus = 'Active'
+    """
+    return execute_query(query, (username, password), fetch_one=True)
+
+
+def db_check_username_exists(username):
+    query = "SELECT COUNT(*) FROM Users WHERE Username = ?"
+    result = execute_query(query, (username, ), fetch_one=True)
+    return result[0] > 0 if result else False
+
+
+def db_check_email_exists(email):
+    query = "SELECT COUNT(*) FROM Users WHERE EmailAddress = ?"
+    result = execute_query(query, (email, ), fetch_one=True)
+    return result[0] > 0 if result else False
+
+
+def db_create_user(username, password, fullname, email, phone=None):
+    query = """
+        INSERT INTO Users (Username, Password, UserType, EmailAddress, UserStatus, PhoneNo, FullName, DateJoined)
+        VALUES (?, ?, 'User', ?, 'Active', ?, ?, GETDATE())
+    """
+    return execute_query(query, (username, password, email, phone, fullname),
+                         commit=True) > 0
+
+
+def db_get_user(username):
+    query = """
+        SELECT Username, Password, UserType, EmailAddress, UserStatus, 
+               PhoneNo, FullName, DateJoined
+        FROM Users 
+        WHERE Username = ?
+    """
+    return execute_query(query, (username, ), fetch_one=True)
+
+
+# ==================== LOGIN WINDOW ====================
 
 
 class LoginWindow(QtWidgets.QMainWindow):
@@ -17,12 +117,18 @@ class LoginWindow(QtWidgets.QMainWindow):
         self.signupBtn.clicked.connect(self.open_signup)
 
     def authenticate(self):
-        username = self.usernameInput.text()
+        username = self.usernameInput.text().strip()
         password = self.passwordInput.text()
 
-        if username in Users.keys():
-            data = Users[username]
-            if data[1] == password:
+        if not username or not password:
+            self.invalidInputLabel.setText(
+                "Please enter username and password!")
+            return
+
+        try:
+            user_data = db_authenticate_user(username, password)
+
+            if user_data:
                 self.invalidInputLabel.setText("")
 
                 msg = QtWidgets.QMessageBox()
@@ -33,7 +139,9 @@ class LoginWindow(QtWidgets.QMainWindow):
 
                 self.close()
 
-                usertype = data[4]
+                # user_data:  (Username, Password, UserType, EmailAddress, UserStatus, PhoneNo, FullName, DateJoined)
+                usertype = user_data[2]
+
                 if usertype == "Admin":
                     self.dashboard = AdminDashboard(username)
                 else:
@@ -41,14 +149,23 @@ class LoginWindow(QtWidgets.QMainWindow):
 
                 self.dashboard.show()
             else:
-                self.invalidInputLabel.setText("Invalid password!")
-        else:
-            self.invalidInputLabel.setText("Invalid username!")
+                # Check if username exists to give better error message
+                if db_check_username_exists(username):
+                    self.invalidInputLabel.setText("Invalid password!")
+                else:
+                    self.invalidInputLabel.setText("Invalid username!")
+
+        except Exception as e:
+            self.invalidInputLabel.setText("Database connection error!")
+            print(f"Login error: {e}")
 
     def open_signup(self):
         self.close()
         self.view_signup = SignupWindow()
         self.view_signup.show()
+
+
+# ==================== SIGNUP WINDOW ====================
 
 
 class SignupWindow(QtWidgets.QMainWindow):
@@ -61,49 +178,79 @@ class SignupWindow(QtWidgets.QMainWindow):
         self.returnBtn.clicked.connect(self.open_login)
 
     def authenticate(self):
-        username = self.usernameInput.text()
-        fullname = self.fullnameInput.text()
-        email = self.emailInput.text()
+        username = self.usernameInput.text().strip()
+        fullname = self.fullnameInput.text().strip()
+        email = self.emailInput.text().strip()
         password1 = self.passwordInput.text()
         password2 = self.confirmPasswordInput.text()
 
+        # Validate all fields are filled
         if not username or not fullname or not email or not password1 or not password2:
             self.invalidInputLabel.setText("Please fill out all fields!")
             return
 
-        if username in Users.keys():
-            self.invalidInputLabel.setText("Username already exists!")
-            return
-
-        pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-        if not re.match(pattern, email):
-            self.invalidInputLabel.setText("Invalid email entered!")
-            return
-
-        if (len(password1) < 8) or (" " in password1):
-            self.invalidInputLabel.setText(
-                "Password must have at least 8 characters (no spaces)!")
-            return
-
-        if password1 != password2:
-            self.invalidInputLabel.setText("Passwords do not match!")
-            return
-
+        # Validate username format
         pattern = r'^[A-Za-z0-9._]{2,15}$'
         if not re.match(pattern, username):
             self.invalidInputLabel.setText(
                 "Username must be alphanumeric, 2-15 characters!")
             return
 
-        today = datetime.now().strftime("%Y-%m-%d")
-        Users[username] = [
-            fullname, password1, email, r"Profile Pictures\default. jpg",
-            "Listener", "Free", 0, today
-        ]
+        # Check if username already exists
+        try:
+            if db_check_username_exists(username):
+                self.invalidInputLabel.setText("Username already exists!")
+                return
+        except Exception as e:
+            self.invalidInputLabel.setText("Database connection error!")
+            print(f"Username check error: {e}")
+            return
 
-        QtWidgets.QMessageBox.information(self, "Success",
-                                          "Signup successful!")
-        self.open_login()
+        # Validate email format
+        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+        if not re.match(email_pattern, email):
+            self.invalidInputLabel.setText("Invalid email entered!")
+            return
+
+        # Check if email already exists
+        try:
+            if db_check_email_exists(email):
+                self.invalidInputLabel.setText("Email already registered!")
+                return
+        except Exception as e:
+            self.invalidInputLabel.setText("Database connection error!")
+            print(f"Email check error: {e}")
+            return
+
+        # Validate password
+        if len(password1) < 8 or " " in password1:
+            self.invalidInputLabel.setText(
+                "Password must have at least 8 characters (no spaces)!")
+            return
+
+        # Check passwords match
+        if password1 != password2:
+            self.invalidInputLabel.setText("Passwords do not match!")
+            return
+
+        # Validate full name
+        if len(fullname) < 2:
+            self.invalidInputLabel.setText(
+                "Full name must be at least 2 characters!")
+            return
+
+        # Create user in database
+        try:
+            if db_create_user(username, password1, fullname, email):
+                QtWidgets.QMessageBox.information(
+                    self, "Success", "Signup successful!  You can now login.")
+                self.open_login()
+            else:
+                self.invalidInputLabel.setText(
+                    "Failed to create account.  Try again!")
+        except Exception as e:
+            self.invalidInputLabel.setText("Database error occurred!")
+            print(f"Signup error: {e}")
 
     def open_login(self):
         self.close()
@@ -155,6 +302,24 @@ class AdminDashboard(QtWidgets.QMainWindow):
         if page:
             self.stackedWidget.setCurrentWidget(page)
             self.highlight_button(sender)
+            # Refresh data when switching pages
+            self.refresh_current_page(page)
+
+    def refresh_current_page(self, page):
+        try:
+            if page == self.artistRequestsPage:
+                self.handler.load_artist_requests_table()
+            elif page == self.usersPage:
+                self.handler.load_users_table()
+            elif page == self.PendingSongsPage:
+                self.handler.load_pending_songs_table()
+            elif page == self.ReportsPage:
+                self.handler.load_reported_songs_table()
+            elif page == self.AnalyticsPage:
+                self.handler.load_subscription_plans_table()
+                self.handler.load_genre_table()
+        except Exception as e:
+            print(f"Error refreshing page:  {e}")
 
     def highlight_button(self, active_btn):
         for btn in self.page_map:
@@ -174,7 +339,13 @@ class UserDashboard(QtWidgets.QMainWindow):
         uic.loadUi(r"App UI\artist_main.ui", self)
 
         self.username = username
-        self.user_data = get_user(username)
+
+        # Get user data from database
+        try:
+            self.user_data = db_get_user(username)
+        except Exception as e:
+            print(f"Error getting user data: {e}")
+            self.user_data = None
 
         # Setup table headers
         tables = [
