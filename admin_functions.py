@@ -6,11 +6,12 @@ from matplotlib.figure import Figure
 
 # ==================== DATABASE CONNECTION ====================
 
-server = 'SAROSH-PC\SQLSERVERSEM3'
+server = 'Ammars-Laptop\SQLSERVER1'
 database = 'HabibifyDatabase'
-use_windows_authentication = True
-username = 'your_username'
-password = 'your_password'
+use_windows_authentication = False
+username = 'sa'
+password = 'paxxific1_'
+
 
 
 def get_connection():
